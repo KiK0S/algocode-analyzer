@@ -1,0 +1,23 @@
+[
+  {
+    "id": "all-problems",
+    "label": "All problems",
+    "description": "Selects every problem in the dataset.",
+    "select": "all"
+  },
+  {
+    "id": "dp-focus",
+    "label": "Dynamic programming focus",
+    "description": "Keeps only the Bootcamp Fall 2025 contest and highlights a pair of late DP tasks.",
+    "select": "none",
+    "contests": ["bp_fall_2025"],
+    "problems": ["bp_fall_2025::F", "bp_fall_2025::G"]
+  },
+  {
+    "id": "sample-starter",
+    "label": "Sample snapshot starter",
+    "description": "Example preset for the bundled sample data that keeps the first two tasks.",
+    "select": "none",
+    "problems": ["A", "B"]
+  }
+]

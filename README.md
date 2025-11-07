@@ -26,6 +26,44 @@ The script downloads the latest standings into `standings_data/bp_fall_2025.json
 
 > The repository includes a tiny sample dataset so the UI works offline—be sure to refresh it before relying on the numbers.
 
+## Problem filter presets
+
+The UI can load reusable problem selections from `standings_data/problem_filter_presets.json`. Each entry in the array is a preset with a `label` and an optional `description`. Presets support the following fields:
+
+| Field | Purpose |
+| --- | --- |
+| `id` | Unique identifier (used internally for re-applying the preset). |
+| `label` | Human-friendly name shown in the "Problem preset" dropdown. |
+| `description` | Optional tooltip text for the dropdown option. |
+| `select` | Starting mode: use `"all"` to begin with every problem selected, `"none"` (or omit the field) to start empty. |
+| `contests` | Array of contest identifiers whose problems should be enabled. |
+| `problems` | Array of problem identifiers (any of `id`, `short`, `problemCode`) to enable. |
+| `excludeContests` | Array of contest identifiers to disable after the initial selection. |
+| `excludeProblems` | Array of problem identifiers to disable after the initial selection. |
+
+Example preset file:
+
+```json
+[
+  {
+    "id": "all-problems",
+    "label": "All problems",
+    "description": "Selects every problem in the dataset.",
+    "select": "all"
+  },
+  {
+    "id": "dp-focus",
+    "label": "Dynamic programming focus",
+    "description": "Keeps only the Bootcamp Fall 2025 contest and highlights a pair of late DP tasks.",
+    "select": "none",
+    "contests": ["bp_fall_2025"],
+    "problems": ["bp_fall_2025::F", "bp_fall_2025::G"]
+  }
+]
+```
+
+Drop new presets into the JSON file, refresh the page, and the dropdown will list them for quick application.
+
 ## Deployment pipeline
 
 The GitHub Actions workflow fetches a fresh snapshot during each deployment and publishes both `index.html` and the JSON data to GitHub Pages. If the remote fetch fails, the job falls back to any existing repository snapshot so that the site always ships with at least one data source.

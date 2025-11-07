@@ -117,22 +117,118 @@
       gap: 0.5rem;
       align-items: center;
     }
-    #problem-checkboxes {
+    details.problem-filter {
       margin: 1.5rem 0 1rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem 1rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.03);
+      overflow: hidden;
     }
-    #problem-checkboxes label {
+    body.dark details.problem-filter {
+      border-color: rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    details.problem-filter > summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0.6rem 0.9rem;
       display: flex;
       align-items: center;
-      gap: 0.35rem;
-      padding: 0.4rem 0.6rem;
-      border-radius: 6px;
-      background: rgba(0, 0, 0, 0.05);
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-weight: 600;
     }
-    body.dark #problem-checkboxes label {
-      background: rgba(255, 255, 255, 0.12);
+    details.problem-filter > summary::-webkit-details-marker {
+      display: none;
+    }
+    details.problem-filter[open] > summary {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    body.dark details.problem-filter[open] > summary {
+      border-bottom-color: rgba(255, 255, 255, 0.12);
+    }
+    #problem-filter-body {
+      padding: 0.75rem 0.9rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    #problem-checkboxes {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+    .contest-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    body.dark .contest-group {
+      background: rgba(0, 0, 0, 0.25);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .contest-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .contest-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+    }
+    .contest-toggle span {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .contest-count {
+      font-size: 0.8rem;
+      color: rgba(0, 0, 0, 0.6);
+    }
+    body.dark .contest-count {
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .contest-problem-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.4rem 0.6rem;
+    }
+    .contest-problem {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+      transition: background 0.2s ease, opacity 0.2s ease;
+    }
+    .contest-problem:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+    body.dark .contest-problem {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    body.dark .contest-problem:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+    .contest-problem.is-deselected {
+      opacity: 0.6;
+    }
+    .contest-problem .problem-code {
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    .contest-problem .problem-title {
+      font-size: 0.85rem;
+      line-height: 1.2;
     }
     table {
       width: 100%;
@@ -156,22 +252,71 @@
       text-align: center;
       width: 3rem;
     }
+    th.problem-column {
+      min-width: 4.75rem;
+    }
+    .problem-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+    }
+    .problem-header .problem-code {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .problem-header .problem-title {
+      font-size: 0.75rem;
+      opacity: 0.75;
+      line-height: 1.1;
+      text-align: center;
+    }
+    .problem-header .problem-contest {
+      font-size: 0.7rem;
+      opacity: 0.6;
+    }
     tr:nth-child(even) {
       background: rgba(0, 0, 0, 0.03);
     }
     body.dark tr:nth-child(even) {
       background: rgba(255, 255, 255, 0.05);
     }
+    td.cell-solved {
+      background: #e6f5ea;
+      color: #0f5132;
+      font-weight: 600;
+    }
+    body.dark td.cell-solved {
+      background: rgba(46, 125, 50, 0.35);
+      color: #c8e6c9;
+    }
+    td.cell-unsolved {
+      background: #fff4e5;
+      color: #8c2f00;
+    }
+    body.dark td.cell-unsolved {
+      background: rgba(255, 183, 77, 0.18);
+      color: #ffcc80;
+    }
+    td.cell-missing {
+      background: rgba(0, 0, 0, 0.02);
+      color: rgba(0, 0, 0, 0.55);
+    }
+    body.dark td.cell-missing {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.65);
+    }
     .badge {
-      padding: 0.1rem 0.45rem;
+      padding: 0.15rem 0.5rem;
       border-radius: 999px;
       font-size: 0.8rem;
-      background: #e0f2ff;
-      color: #005a9e;
+      font-weight: 600;
+      background: #e0f7ea;
+      color: #1b5e20;
     }
     body.dark .badge {
-      background: rgba(0, 102, 204, 0.25);
-      color: #8cc8ff;
+      background: rgba(46, 125, 50, 0.35);
+      color: #c8e6c9;
     }
     .muted {
       color: rgba(0, 0, 0, 0.6);
@@ -214,6 +359,12 @@
         Name/Class filter
         <input id="search-filter" type="search" placeholder="Type to filter participants" aria-label="Filter participants" />
       </label>
+      <label>
+        Problem preset
+        <select id="preset-selector">
+          <option value="">Apply preset…</option>
+        </select>
+      </label>
       <div class="button-row">
         <button id="select-all" class="secondary" type="button">Select all problems</button>
         <button id="clear-selection" class="secondary" type="button">Clear selection</button>
@@ -221,7 +372,15 @@
         <a id="view-snapshot" class="button secondary" href="standings_data/bp_fall_2025.json" target="_blank" rel="noopener">Open snapshot</a>
       </div>
     </section>
-    <section id="problem-checkboxes" aria-label="Problem selection"></section>
+    <details id="problem-filter-panel" class="problem-filter">
+      <summary id="problem-filter-summary">
+        Problem filters
+        <span id="problem-filter-summary-count" class="muted"></span>
+      </summary>
+      <div id="problem-filter-body">
+        <div id="problem-checkboxes" aria-label="Problem selection"></div>
+      </div>
+    </details>
     <div id="status" role="status">Loading standings…</div>
     <div class="table-wrapper">
       <table id="standings">
@@ -281,13 +440,26 @@
         ]
       };
 
+      const RENDER_DEFER_MS = 5000;
+      const FILTER_PRESET_URL = 'standings_data/problem_filter_presets.json';
+
+      const presetState = {
+        loaded: false,
+        items: []
+      };
+
+      let pendingRenderTimeoutId = null;
+
       const state = {
         problems: [],
         participants: [],
         selectedProblems: new Set(),
         group: '__ALL__',
         search: '',
-        dataSource: null
+        dataSource: null,
+        hasContestGroups: false,
+        activePresetId: null,
+        activePresetLabel: ''
       };
 
       let contestProblemContext = null;
@@ -296,7 +468,10 @@
         status: document.getElementById('status'),
         groupFilter: document.getElementById('group-filter'),
         searchFilter: document.getElementById('search-filter'),
+        presetSelector: document.getElementById('preset-selector'),
         problemContainer: document.getElementById('problem-checkboxes'),
+        problemFilterPanel: document.getElementById('problem-filter-panel'),
+        problemFilterSummaryCount: document.getElementById('problem-filter-summary-count'),
         tableHead: document.querySelector('#standings thead'),
         tableBody: document.querySelector('#standings tbody'),
         selectAll: document.getElementById('select-all'),
@@ -319,6 +494,256 @@
         }
       }
 
+      function scheduleRenderTable() {
+        if (pendingRenderTimeoutId) {
+          clearTimeout(pendingRenderTimeoutId);
+        }
+        pendingRenderTimeoutId = window.setTimeout(() => {
+          pendingRenderTimeoutId = null;
+          renderTable();
+        }, RENDER_DEFER_MS);
+      }
+
+      function cancelScheduledRender() {
+        if (pendingRenderTimeoutId) {
+          clearTimeout(pendingRenderTimeoutId);
+          pendingRenderTimeoutId = null;
+        }
+      }
+
+      function clearActivePreset() {
+        if (state.activePresetId || state.activePresetLabel) {
+          state.activePresetId = null;
+          state.activePresetLabel = '';
+        }
+      }
+
+      function updateProblemFilterSummary() {
+        if (!elements.problemFilterSummaryCount) {
+          return;
+        }
+        const total = state.problems.length;
+        if (!total) {
+          elements.problemFilterSummaryCount.textContent = '• No problems loaded';
+          return;
+        }
+        const selected = state.selectedProblems.size;
+        let summaryText = `• ${selected}/${total} selected`;
+        if (state.activePresetLabel) {
+          summaryText += ` • Preset: ${state.activePresetLabel}`;
+        }
+        elements.problemFilterSummaryCount.textContent = summaryText;
+      }
+
+      function hasMultipleContestGroups(problems) {
+        const groups = new Set();
+        problems.forEach((problem) => {
+          groups.add(problem.contestId ?? '__single__');
+        });
+        return groups.size > 1;
+      }
+
+      function groupProblemsForFilters() {
+        if (!state.problems.length) {
+          return [];
+        }
+        const map = new Map();
+        state.problems.forEach((problem) => {
+          const key = problem.contestId ?? '__standalone__';
+          if (!map.has(key)) {
+            const label = problem.displayContest ?? problem.contestLabel ?? problem.contestTitle;
+            map.set(key, {
+              id: key,
+              title: label ?? 'All problems',
+              order: problem.contestOrder ?? 0,
+              problems: []
+            });
+          }
+          const group = map.get(key);
+          group.order = Math.min(group.order, problem.contestOrder ?? group.order ?? 0);
+          group.problems.push(problem);
+        });
+        const groups = Array.from(map.values());
+        groups.forEach((group) => {
+          group.problems.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        });
+        groups.sort((a, b) => {
+          if (a.order !== b.order) {
+            return a.order - b.order;
+          }
+          return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+        });
+        return groups;
+      }
+
+      function normalizeIdList(value) {
+        if (!value) {
+          return [];
+        }
+        if (Array.isArray(value)) {
+          return value
+            .map((entry) => (entry == null ? '' : String(entry).trim()))
+            .filter((entry) => entry.length);
+        }
+        if (typeof value === 'string') {
+          return value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter((entry) => entry.length);
+        }
+        return [];
+      }
+
+      function normalizePreset(raw, index) {
+        if (!raw || typeof raw !== 'object') {
+          return null;
+        }
+        const id = raw.id ? String(raw.id) : `preset-${index + 1}`;
+        const label = raw.label ? String(raw.label) : `Preset ${index + 1}`;
+        const description = typeof raw.description === 'string' ? raw.description : '';
+        const selectRaw = typeof raw.select === 'string' ? raw.select.toLowerCase() : '';
+        const select = selectRaw === 'all' || selectRaw === 'none' ? selectRaw : 'only';
+        const include = raw.include && typeof raw.include === 'object' ? raw.include : null;
+        const exclude = raw.exclude && typeof raw.exclude === 'object' ? raw.exclude : null;
+        const contests = normalizeIdList(raw.contests ?? include?.contests ?? include?.contestIds);
+        const problems = normalizeIdList(raw.problems ?? include?.problems ?? include?.problemIds);
+        const excludeContests = normalizeIdList(raw.excludeContests ?? exclude?.contests ?? exclude?.contestIds);
+        const excludeProblems = normalizeIdList(
+          raw.excludeProblems ?? raw.excludedProblems ?? exclude?.problems ?? exclude?.problemIds
+        );
+        return {
+          id,
+          label,
+          description,
+          select,
+          contests,
+          problems,
+          excludeContests,
+          excludeProblems
+        };
+      }
+
+      function renderPresetOptions() {
+        if (!elements.presetSelector) {
+          return;
+        }
+        const select = elements.presetSelector;
+        const previousValue = select.value;
+        select.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = presetState.items.length ? 'Apply preset…' : 'No presets available';
+        if (!presetState.items.length) {
+          placeholder.disabled = true;
+        }
+        select.append(placeholder);
+        presetState.items.forEach((preset) => {
+          const option = document.createElement('option');
+          option.value = preset.id;
+          option.textContent = preset.label;
+          if (preset.description) {
+            option.title = preset.description;
+          }
+          select.append(option);
+        });
+        if (presetState.items.length && previousValue && presetState.items.some((preset) => preset.id === previousValue)) {
+          select.value = previousValue;
+        } else {
+          select.value = '';
+        }
+        select.disabled = !state.problems.length || !presetState.items.length;
+      }
+
+      async function loadFilterPresets() {
+        if (presetState.loaded) {
+          renderPresetOptions();
+          return;
+        }
+        try {
+          const response = await fetch(FILTER_PRESET_URL, {
+            headers: { Accept: 'application/json, text/plain, */*' },
+            cache: 'no-store'
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const payload = await response.json();
+          if (Array.isArray(payload)) {
+            presetState.items = payload
+              .map((item, index) => normalizePreset(item, index))
+              .filter((item) => item !== null);
+          }
+        } catch (error) {
+          console.warn('Failed to load problem filter presets:', error);
+          presetState.items = [];
+        } finally {
+          presetState.loaded = true;
+          renderPresetOptions();
+        }
+      }
+
+      function applyPreset(preset) {
+        if (!preset) {
+          return;
+        }
+        const nextSelected = new Set();
+        if (preset.select === 'all') {
+          state.problems.forEach((problem) => {
+            nextSelected.add(problem.id);
+          });
+        }
+        const includeContestSet = new Set(preset.contests.map((id) => id.toString()));
+        const includeProblemSet = new Set(preset.problems.map((id) => id.toString()));
+        const excludeContestSet = new Set(preset.excludeContests.map((id) => id.toString()));
+        const excludeProblemSet = new Set(preset.excludeProblems.map((id) => id.toString()));
+
+        if (includeContestSet.size || includeProblemSet.size || preset.select === 'only' || preset.select === 'none') {
+          if (preset.select !== 'all') {
+            // start from empty selection when the preset should explicitly choose items
+            nextSelected.clear();
+          }
+          state.problems.forEach((problem) => {
+            const contestMatches = includeContestSet.has(String(problem.contestId));
+            const problemMatches = includeProblemSet.has(problem.id)
+              || includeProblemSet.has(problem.originalId ?? '')
+              || includeProblemSet.has(problem.short ?? '')
+              || includeProblemSet.has(problem.problemCode ?? '')
+              || includeProblemSet.has(problem.displayCode ?? '');
+            if (contestMatches || problemMatches) {
+              nextSelected.add(problem.id);
+            }
+          });
+        }
+
+        if (excludeContestSet.size || excludeProblemSet.size) {
+          state.problems.forEach((problem) => {
+            if (excludeContestSet.has(String(problem.contestId))) {
+              nextSelected.delete(problem.id);
+              return;
+            }
+            if (
+              excludeProblemSet.has(problem.id)
+              || excludeProblemSet.has(problem.originalId ?? '')
+              || excludeProblemSet.has(problem.short ?? '')
+              || excludeProblemSet.has(problem.problemCode ?? '')
+              || excludeProblemSet.has(problem.displayCode ?? '')
+            ) {
+              nextSelected.delete(problem.id);
+            }
+          });
+        }
+
+        state.selectedProblems = nextSelected.size ? nextSelected : new Set();
+        state.activePresetId = preset.id;
+        state.activePresetLabel = preset.label;
+        if (elements.problemFilterPanel && !elements.problemFilterPanel.open) {
+          elements.problemFilterPanel.open = true;
+        }
+        renderProblemCheckboxes();
+        cancelScheduledRender();
+        renderTable();
+      }
+
       async function loadStandings() {
         try {
           setStatus('Loading standings…');
@@ -330,10 +755,12 @@
               state.problems = normalized.problems;
               state.participants = normalized.participants;
               state.selectedProblems = new Set(state.problems.map((problem) => problem.id));
+              state.hasContestGroups = hasMultipleContestGroups(state.problems);
               state.dataSource = source;
               renderGroupFilter();
               renderProblemCheckboxes();
               renderTable();
+              loadFilterPresets();
               const detailParts = [`Source: ${source.label}`];
               if (source.url) {
                 detailParts.push(source.url);
@@ -357,10 +784,12 @@
             state.problems = normalized.problems;
             state.participants = normalized.participants;
             state.selectedProblems = new Set(state.problems.map((problem) => problem.id));
+            state.hasContestGroups = hasMultipleContestGroups(state.problems);
             state.dataSource = { label: 'Bundled sample standings' };
             renderGroupFilter();
             renderProblemCheckboxes();
             renderTable();
+            loadFilterPresets();
             const detailParts = ['Source: Bundled sample standings'];
             if (errors.length) {
               detailParts.push(`Previous errors: ${errors.join(' | ')}`);
@@ -414,15 +843,37 @@
           if (!contestProblems.length) {
             return;
           }
-          const built = buildProblemsFromList(contestProblems);
           const contestId = contest?.id ?? contest?.slug ?? contest?.code ?? contest?.ejudge_id ?? `contest-${contestIndex + 1}`;
           const contestLabel = contest?.short ?? contest?.code ?? contest?.alias ?? contestId ?? `C${contestIndex + 1}`;
           const contestTitle = contest?.title ?? contest?.name ?? contestLabel ?? `Contest ${contestIndex + 1}`;
+          const built = buildProblemsFromList(contestProblems, {
+            contestId,
+            contestLabel,
+            contestTitle,
+            contestOrder: contestIndex
+          });
           built.forEach((problem, problemIndex) => {
             const baseId = multiContest ? `${contestId}::${problem.id}` : problem.id;
-            const shortLabel = multiContest ? `${contestLabel}-${problem.short}` : problem.short;
-            const title = multiContest ? `${contestTitle} – ${problem.title}` : problem.title;
-            provisional.push({ id: baseId, short: shortLabel, title });
+            const problemCode = problem.problemCode ?? problem.short ?? `P${problemIndex + 1}`;
+            const problemTitle = problem.problemTitle ?? problem.title ?? `Problem ${problemIndex + 1}`;
+            const tooltip = multiContest ? `${contestTitle} • ${problemTitle}` : problemTitle;
+            provisional.push({
+              ...problem,
+              id: baseId,
+              short: problemCode,
+              title: problemTitle,
+              problemCode,
+              problemTitle,
+              contestId,
+              contestLabel,
+              contestTitle,
+              contestOrder: contestIndex,
+              order: problem.order ?? problemIndex,
+              displayCode: problemCode,
+              displayContest: contestLabel ?? contestTitle,
+              tooltip,
+              originalId: problem.originalId ?? problem.id
+            });
             locationLookup.set(baseId, { contestIndex, problemIndex });
           });
         });
@@ -444,13 +895,18 @@
             id = candidate;
           }
           seenIds.add(id);
-          const shortLabel = problem.short && String(problem.short).trim().length ? String(problem.short) : id;
-          const title = problem.title && String(problem.title).trim().length ? String(problem.title) : shortLabel;
-          normalizedProblems.push({ id, short: shortLabel, title });
-          const location = locationLookup.get(problem.id) ?? locationLookup.get(id);
+          const normalized = { ...problem, id };
+          normalizedProblems.push(normalized);
+          const location = locationLookup.get(problem.id) || locationLookup.get(problem.originalId) || locationLookup.get(id);
           if (location) {
             normalizedLookup.set(id, location);
           }
+        });
+        normalizedProblems.sort((a, b) => {
+          if (a.contestOrder !== b.contestOrder) {
+            return a.contestOrder - b.contestOrder;
+          }
+          return (a.order ?? 0) - (b.order ?? 0);
         });
         return { problems: normalizedProblems, lookup: normalizedLookup };
       }
@@ -826,34 +1282,47 @@
         return undefined;
       }
 
-      function buildProblemsFromList(list) {
+      function buildProblemsFromList(list, options = {}) {
         const seenIds = new Set();
         return list.map((item, index) => {
           const asObject = typeof item === 'object' && item !== null;
           const idCandidate = asObject
             ? (item.id ?? item.problem ?? item.code ?? item.short ?? item.letter ?? item.alias ?? item.name ?? item.value)
             : item;
-          let id = idCandidate ? String(idCandidate) : `p${index + 1}`;
-          if (seenIds.has(id)) {
+          let normalizedId = idCandidate ? String(idCandidate) : `p${index + 1}`;
+          if (seenIds.has(normalizedId)) {
             let suffix = 1;
-            let candidateId = `${id}-${suffix}`;
+            let candidateId = `${normalizedId}-${suffix}`;
             while (seenIds.has(candidateId)) {
               suffix += 1;
-              candidateId = `${id}-${suffix}`;
+              candidateId = `${normalizedId}-${suffix}`;
             }
-            id = candidateId;
+            normalizedId = candidateId;
           }
-          seenIds.add(id);
+          seenIds.add(normalizedId);
           const shortLabel = asObject
             ? (item.short ?? item.letter ?? item.code ?? item.alias ?? item.id ?? item.problem ?? item.name)
             : item;
           const title = asObject
-            ? (item.title ?? item.name ?? item.problem ?? item.description ?? item.text ?? item.label ?? shortLabel ?? id)
+            ? (item.title ?? item.name ?? item.problem ?? item.description ?? item.text ?? item.label ?? shortLabel ?? normalizedId)
             : item;
+          const problemCode = shortLabel ? String(shortLabel) : `P${index + 1}`;
+          const problemTitle = title ? String(title) : `Problem ${index + 1}`;
           return {
-            id,
-            short: shortLabel ? String(shortLabel) : `P${index + 1}`,
-            title: title ? String(title) : `Problem ${index + 1}`
+            id: normalizedId,
+            originalId: normalizedId,
+            short: problemCode,
+            title: problemTitle,
+            problemCode,
+            problemTitle,
+            contestId: options.contestId ?? options.defaultContestId ?? null,
+            contestLabel: options.contestLabel ?? null,
+            contestTitle: options.contestTitle ?? null,
+            contestOrder: options.contestOrder ?? 0,
+            order: (options.offset ?? 0) + index,
+            displayCode: problemCode,
+            displayContest: options.contestLabel ?? options.contestTitle ?? null,
+            tooltip: problemTitle
           };
         });
       }
@@ -1111,34 +1580,137 @@
       }
 
       function renderProblemCheckboxes() {
+        if (!elements.problemContainer) {
+          return;
+        }
         elements.problemContainer.innerHTML = '';
+        if (elements.problemFilterPanel) {
+          elements.problemFilterPanel.classList.toggle('is-empty', !state.problems.length);
+        }
+        if (elements.presetSelector) {
+          elements.presetSelector.disabled = !state.problems.length || !presetState.items.length;
+        }
         if (!state.problems.length) {
           const span = document.createElement('span');
           span.textContent = 'No problems found in the standings.';
           elements.problemContainer.append(span);
+          updateProblemFilterSummary();
           return;
         }
-        state.problems.forEach((problem) => {
-          const label = document.createElement('label');
-          label.title = problem.title;
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.value = problem.id;
-          checkbox.checked = state.selectedProblems.has(problem.id);
-          checkbox.addEventListener('change', (event) => {
-            const { checked, value } = event.target;
-            if (checked) {
-              state.selectedProblems.add(value);
+        const groups = groupProblemsForFilters();
+        groups.forEach((group) => {
+          const groupElement = document.createElement('div');
+          groupElement.classList.add('contest-group');
+
+          const header = document.createElement('div');
+          header.classList.add('contest-header');
+
+          const groupLabel = document.createElement('label');
+          groupLabel.classList.add('contest-toggle');
+
+          const groupCheckbox = document.createElement('input');
+          groupCheckbox.type = 'checkbox';
+          groupCheckbox.value = group.id;
+
+          const labelText = document.createElement('span');
+          labelText.textContent = group.title;
+
+          groupLabel.append(groupCheckbox, labelText);
+          header.append(groupLabel);
+
+          const countDisplay = document.createElement('span');
+          countDisplay.classList.add('contest-count');
+          header.append(countDisplay);
+
+          const problemList = document.createElement('div');
+          problemList.classList.add('contest-problem-list');
+
+          const problemControls = [];
+
+          const computeSelectedCount = () =>
+            group.problems.reduce((sum, problem) => (state.selectedProblems.has(problem.id) ? sum + 1 : sum), 0);
+
+          const updateGroupState = () => {
+            const selectedCount = computeSelectedCount();
+            countDisplay.textContent = `${selectedCount}/${group.problems.length} selected`;
+            if (selectedCount === group.problems.length) {
+              groupCheckbox.checked = true;
+              groupCheckbox.indeterminate = false;
+            } else if (selectedCount === 0) {
+              groupCheckbox.checked = false;
+              groupCheckbox.indeterminate = false;
             } else {
-              state.selectedProblems.delete(value);
+              groupCheckbox.checked = false;
+              groupCheckbox.indeterminate = true;
             }
-            renderTable();
+          };
+
+          group.problems.forEach((problem) => {
+            const problemLabel = document.createElement('label');
+            problemLabel.classList.add('contest-problem');
+            problemLabel.dataset.problemId = problem.id;
+            problemLabel.title = problem.tooltip ?? problem.problemTitle ?? problem.title ?? problem.displayCode;
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = problem.id;
+            checkbox.checked = state.selectedProblems.has(problem.id);
+
+            const codeSpan = document.createElement('span');
+            codeSpan.classList.add('problem-code');
+            codeSpan.textContent = problem.displayCode ?? problem.short ?? problem.id;
+
+            const titleSpan = document.createElement('span');
+            titleSpan.classList.add('problem-title');
+            titleSpan.textContent = problem.problemTitle ?? problem.title ?? problem.displayCode ?? 'Problem';
+
+            problemLabel.append(checkbox, codeSpan, titleSpan);
+            problemLabel.classList.toggle('is-deselected', !checkbox.checked);
+
+            checkbox.addEventListener('change', (event) => {
+              const { checked } = event.target;
+              if (checked) {
+                state.selectedProblems.add(problem.id);
+              } else {
+                state.selectedProblems.delete(problem.id);
+              }
+              problemLabel.classList.toggle('is-deselected', !checked);
+              clearActivePreset();
+              updateGroupState();
+              updateProblemFilterSummary();
+              scheduleRenderTable();
+            });
+
+            problemControls.push({ checkbox, label: problemLabel });
+            problemList.append(problemLabel);
           });
-          const text = document.createElement('span');
-          text.textContent = problem.short;
-          label.append(checkbox, text);
-          elements.problemContainer.append(label);
+
+          groupCheckbox.addEventListener('change', (event) => {
+            const { checked } = event.target;
+            group.problems.forEach((problem) => {
+              if (checked) {
+                state.selectedProblems.add(problem.id);
+              } else {
+                state.selectedProblems.delete(problem.id);
+              }
+            });
+            problemControls.forEach(({ checkbox, label }) => {
+              checkbox.checked = checked;
+              label.classList.toggle('is-deselected', !checked);
+            });
+            clearActivePreset();
+            updateGroupState();
+            updateProblemFilterSummary();
+            scheduleRenderTable();
+          });
+
+          updateGroupState();
+
+          groupElement.append(header, problemList);
+          elements.problemContainer.append(groupElement);
         });
+
+        updateProblemFilterSummary();
       }
 
       function computeSolvedCount(participant) {
@@ -1182,6 +1754,7 @@
 
       function renderTable() {
         const visibleProblems = getVisibleProblems();
+        const hasMultipleContestGroups = state.hasContestGroups;
         const filtered = filterParticipants().map((participant) => ({
           ...participant,
           solvedCount: computeSolvedCount(participant)
@@ -1211,9 +1784,33 @@
         });
         visibleProblems.forEach((problem) => {
           const th = document.createElement('th');
-          th.classList.add('shrink');
-          th.textContent = problem.short;
-          th.title = problem.title;
+          th.classList.add('shrink', 'problem-column');
+          th.title = problem.tooltip ?? problem.problemTitle ?? problem.title ?? problem.displayCode ?? '';
+          const container = document.createElement('div');
+          container.classList.add('problem-header');
+
+          const codeSpan = document.createElement('span');
+          codeSpan.classList.add('problem-code');
+          codeSpan.textContent = problem.displayCode ?? problem.short ?? problem.id;
+          container.append(codeSpan);
+
+          const titleText = problem.problemTitle ?? problem.title;
+          if (titleText && titleText !== codeSpan.textContent) {
+            const titleSpan = document.createElement('span');
+            titleSpan.classList.add('problem-title');
+            titleSpan.textContent = titleText;
+            container.append(titleSpan);
+          }
+
+          const contestLabel = problem.displayContest ?? problem.contestLabel ?? problem.contestTitle;
+          if (hasMultipleContestGroups && contestLabel && contestLabel !== titleText) {
+            const contestSpan = document.createElement('span');
+            contestSpan.classList.add('problem-contest');
+            contestSpan.textContent = contestLabel;
+            container.append(contestSpan);
+          }
+
+          th.append(container);
           headerRow.append(th);
         });
         elements.tableHead.append(headerRow);
@@ -1257,9 +1854,24 @@
             const cell = document.createElement('td');
             cell.classList.add('shrink');
             const entry = participant.problems[problem.id];
-            cell.textContent = entry?.solved ? '✓' : '—';
-            if (entry?.display && entry.display !== '✓' && entry.display !== '—') {
-              cell.title = entry.display;
+            if (!entry) {
+              cell.classList.add('cell-missing');
+              cell.textContent = '—';
+              if (problem.tooltip) {
+                cell.title = problem.tooltip;
+              }
+            } else if (entry.solved) {
+              cell.classList.add('cell-solved');
+              cell.textContent = '✓';
+              if (entry.display && entry.display !== '✓') {
+                cell.title = entry.display;
+              }
+            } else {
+              cell.classList.add('cell-unsolved');
+              cell.textContent = '—';
+              if (entry.display && entry.display !== '—') {
+                cell.title = entry.display;
+              }
             }
             row.append(cell);
           });
@@ -1324,18 +1936,38 @@
 
       elements.searchFilter.addEventListener('input', (event) => {
         state.search = event.target.value.trim().toLowerCase();
+        cancelScheduledRender();
         renderTable();
       });
 
+      if (elements.presetSelector) {
+        elements.presetSelector.addEventListener('change', (event) => {
+          const presetId = event.target.value;
+          if (!presetId) {
+            return;
+          }
+          const preset = presetState.items.find((item) => item.id === presetId);
+          if (preset) {
+            applyPreset(preset);
+            updateProblemFilterSummary();
+          }
+          event.target.value = '';
+        });
+      }
+
       elements.selectAll.addEventListener('click', () => {
         state.selectedProblems = new Set(state.problems.map((problem) => problem.id));
+        clearActivePreset();
         renderProblemCheckboxes();
+        cancelScheduledRender();
         renderTable();
       });
 
       elements.clearSelection.addEventListener('click', () => {
         state.selectedProblems.clear();
+        clearActivePreset();
         renderProblemCheckboxes();
+        cancelScheduledRender();
         renderTable();
       });
 
@@ -1347,6 +1979,7 @@
         document.body.classList.add('dark');
       }
 
+      updateProblemFilterSummary();
       loadStandings();
     })();
   </script>
