@@ -1,0 +1,35 @@
+{
+  "legend": {
+    "problems": [
+      { "code": "A", "title": "Intro Problem" },
+      { "code": "B", "title": "Graphs Warmup" },
+      { "code": "C", "title": "Dynamic Programming" }
+    ]
+  },
+  "rows": [
+    {
+      "user": { "name": "Alice Example", "group": "B1", "class": "10" },
+      "problems": [
+        { "result": "AC" },
+        { "result": "AC" },
+        { "result": "WA" }
+      ]
+    },
+    {
+      "user": { "name": "Bob Sample", "group": "B1", "class": "10" },
+      "problems": [
+        { "result": "WA" },
+        { "result": "AC" },
+        { "result": "AC" }
+      ]
+    },
+    {
+      "user": { "name": "Charlie Demo", "group": "B2", "class": "11" },
+      "problems": [
+        { "result": "AC" },
+        { "result": "WA" },
+        { "result": "WA" }
+      ]
+    }
+  ]
+}

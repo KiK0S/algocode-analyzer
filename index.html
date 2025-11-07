@@ -41,9 +41,23 @@
       padding: 0.75rem 1rem;
       border-radius: 8px;
       background: rgba(0, 0, 0, 0.05);
+      border: 1px solid transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
     }
     body.dark #status {
       background: rgba(255, 255, 255, 0.1);
+    }
+    #status.error {
+      border-color: rgba(176, 0, 32, 0.4);
+      color: #b00020;
+      background: rgba(176, 0, 32, 0.08);
+    }
+    body.dark #status.error {
+      color: #ffb3c1;
+      background: rgba(176, 0, 32, 0.25);
+      border-color: rgba(255, 179, 193, 0.5);
     }
     #controls {
       display: flex;
@@ -207,12 +221,25 @@
   <script>
     (function () {
       const API_URL = 'https://algocode.ru/standings_data/bp_fall_2025';
+      const DATA_SOURCES = [
+        {
+          url: 'standings_data/bp_fall_2025.json',
+          label: 'Cached snapshot',
+          mode: 'same-origin'
+        },
+        {
+          url: API_URL,
+          label: 'Live standings',
+          mode: 'cors'
+        }
+      ];
       const state = {
         problems: [],
         participants: [],
         selectedProblems: new Set(),
         group: '__ALL__',
-        search: ''
+        search: '',
+        dataSource: null
       };
 
       const elements = {
@@ -227,37 +254,76 @@
         exportButton: document.getElementById('export')
       };
 
-      function setStatus(message, isError = false) {
-        elements.status.textContent = message;
-        elements.status.style.color = isError ? '#b00020' : 'inherit';
+      function setStatus(message, options = {}) {
+        const { isError = false, detail } = options;
+        elements.status.classList.toggle('error', Boolean(isError));
+        elements.status.innerHTML = '';
+        const summary = document.createElement('div');
+        summary.textContent = message;
+        elements.status.append(summary);
+        if (detail) {
+          const detailElement = document.createElement('div');
+          detailElement.classList.add('muted');
+          detailElement.textContent = detail;
+          elements.status.append(detailElement);
+        }
       }
 
       async function loadStandings() {
         try {
           setStatus('Loading standings…');
-          const response = await fetch(API_URL, { headers: { 'Accept': 'application/json, text/plain, */*' } });
-          const payloadText = await response.text();
-          if (!response.ok) {
-            throw new Error(`Request failed (${response.status} ${response.statusText})`);
+          const errors = [];
+          for (const source of DATA_SOURCES) {
+            try {
+              const data = await fetchStandingsFromSource(source);
+              const normalized = normalizeStandings(data);
+              state.problems = normalized.problems;
+              state.participants = normalized.participants;
+              state.selectedProblems = new Set(state.problems.map((problem) => problem.id));
+              state.dataSource = source;
+              renderGroupFilter();
+              renderProblemCheckboxes();
+              renderTable();
+              const detailParts = [`Source: ${source.label}`];
+              if (source.url) {
+                detailParts.push(source.url);
+              }
+              setStatus(
+                `Loaded ${state.participants.length} participants and ${state.problems.length} problems.`,
+                { detail: detailParts.join(' • ') }
+              );
+              return;
+            } catch (sourceError) {
+              console.error(`Failed to fetch standings from ${source.label}:`, sourceError);
+              let message = sourceError?.message || 'Unknown error';
+              if (sourceError instanceof TypeError && message === 'Failed to fetch') {
+                message = 'Failed to fetch (network error or CORS blocked)';
+              }
+              errors.push(`${source.label}: ${message}`);
+            }
           }
-          let rawData;
-          try {
-            rawData = JSON.parse(payloadText);
-          } catch (parseError) {
-            console.error('Raw response could not be parsed as JSON:', payloadText);
-            throw new Error('The standings endpoint did not return JSON.');
-          }
-          const normalized = normalizeStandings(rawData);
-          state.problems = normalized.problems;
-          state.participants = normalized.participants;
-          state.selectedProblems = new Set(state.problems.map((problem) => problem.id));
-          renderGroupFilter();
-          renderProblemCheckboxes();
-          renderTable();
-          setStatus(`Loaded ${state.participants.length} participants and ${state.problems.length} problems.`);
+          const detailMessage = errors.length ? `Tried ${errors.length} source(s): ${errors.join(' | ')}` : undefined;
+          throw new Error(detailMessage || 'Unable to load standings from any source.');
         } catch (error) {
           console.error(error);
-          setStatus(`Failed to load standings: ${error.message}`, true);
+          setStatus('Failed to load standings.', { isError: true, detail: error.message });
+        }
+      }
+
+      async function fetchStandingsFromSource(source) {
+        const response = await fetch(source.url, {
+          headers: { 'Accept': 'application/json, text/plain, */*' },
+          cache: 'no-store',
+          mode: source.mode || 'cors'
+        });
+        const payloadText = await response.text();
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} ${response.statusText || ''}`.trim());
+        }
+        try {
+          return JSON.parse(payloadText);
+        } catch (parseError) {
+          throw new Error('Response was not valid JSON.');
         }
       }
 
