@@ -344,24 +344,52 @@
           raw?.header?.problems,
           raw?.header?.tasks
         ];
-        let list = candidates.find((item) => Array.isArray(item) && item.length);
-        if (!list && raw?.problems && typeof raw.problems === 'object') {
-          list = Object.values(raw.problems);
+        for (const candidate of candidates) {
+          if (Array.isArray(candidate) && candidate.length) {
+            return buildProblemsFromList(candidate);
+          }
         }
-        if (!Array.isArray(list)) {
-          return [];
+        for (const candidate of candidates) {
+          if (candidate && typeof candidate === 'object') {
+            const values = Object.values(candidate);
+            if (Array.isArray(values) && values.length) {
+              return buildProblemsFromList(values);
+            }
+          }
         }
+        const inferred = inferProblemsFromRows(raw);
+        return inferred.length ? inferred : [];
+      }
+
+      function deriveParticipants(raw, problems) {
+        const rows = findParticipantRows(raw);
+        return rows.map((row, index) => normalizeParticipant(row, index, problems));
+      }
+
+      function buildProblemsFromList(list) {
         const seenIds = new Set();
         return list.map((item, index) => {
           const asObject = typeof item === 'object' && item !== null;
-          const idCandidate = asObject ? (item.id ?? item.problem ?? item.code ?? item.short ?? item.letter ?? item.alias ?? item.name) : item;
+          const idCandidate = asObject
+            ? (item.id ?? item.problem ?? item.code ?? item.short ?? item.letter ?? item.alias ?? item.name ?? item.value)
+            : item;
           let id = idCandidate ? String(idCandidate) : `p${index + 1}`;
           if (seenIds.has(id)) {
-            id = `${id}-${index}`;
+            let suffix = 1;
+            let candidateId = `${id}-${suffix}`;
+            while (seenIds.has(candidateId)) {
+              suffix += 1;
+              candidateId = `${id}-${suffix}`;
+            }
+            id = candidateId;
           }
           seenIds.add(id);
-          const shortLabel = asObject ? (item.short ?? item.letter ?? item.code ?? item.alias ?? item.id) : item;
-          const title = asObject ? (item.title ?? item.name ?? item.problem ?? item.description ?? shortLabel ?? id) : item;
+          const shortLabel = asObject
+            ? (item.short ?? item.letter ?? item.code ?? item.alias ?? item.id ?? item.problem ?? item.name)
+            : item;
+          const title = asObject
+            ? (item.title ?? item.name ?? item.problem ?? item.description ?? item.text ?? item.label ?? shortLabel ?? id)
+            : item;
           return {
             id,
             short: shortLabel ? String(shortLabel) : `P${index + 1}`,
@@ -370,7 +398,7 @@
         });
       }
 
-      function deriveParticipants(raw, problems) {
+      function findParticipantRows(raw) {
         const candidateArrays = [
           raw?.rows,
           raw?.participants,
@@ -382,8 +410,71 @@
           raw?.entries,
           Array.isArray(raw) ? raw : undefined
         ];
-        const rows = candidateArrays.find((entry) => Array.isArray(entry) && entry.length) ?? [];
-        return rows.map((row, index) => normalizeParticipant(row, index, problems));
+        for (const entry of candidateArrays) {
+          if (Array.isArray(entry) && entry.length) {
+            return entry;
+          }
+        }
+        return [];
+      }
+
+      function getProblemCells(row) {
+        const candidates = [
+          row?.problems,
+          row?.tasks,
+          row?.results,
+          row?.scores,
+          row?.columns,
+          row?.solutions,
+          row?.task_results,
+          row?.problem_results,
+          row?.taskResults,
+          row?.problemResults,
+          row?.tasks_columns,
+          row?.problems_columns
+        ];
+        for (const candidate of candidates) {
+          if (Array.isArray(candidate) && candidate.length) {
+            return candidate;
+          }
+        }
+        for (const candidate of candidates) {
+          if (candidate != null) {
+            return candidate;
+          }
+        }
+        return [];
+      }
+
+      function inferProblemsFromRows(raw) {
+        const rows = findParticipantRows(raw);
+        for (const row of rows) {
+          const cells = getProblemCells(row);
+          if (Array.isArray(cells) && cells.length) {
+            return buildProblemsFromList(Array.from({ length: cells.length }));
+          }
+          if (cells && typeof cells === 'object') {
+            const entries = Object.entries(cells);
+            if (entries.length) {
+              const list = entries.map(([key, value]) => {
+                if (value && typeof value === 'object') {
+                  return {
+                    id: key,
+                    short: value.short ?? value.letter ?? value.code ?? value.alias ?? key,
+                    title: value.title ?? value.name ?? value.problem ?? value.description ?? key
+                  };
+                }
+                return {
+                  id: key,
+                  short: key,
+                  title: String(value ?? key)
+                };
+              });
+              return buildProblemsFromList(list);
+            }
+          }
+        }
+        return [];
       }
 
       function normalizeParticipant(row, index, problems) {
@@ -403,7 +494,7 @@
           .find((value) => typeof value === 'string' && value.trim().length) ?? '';
         const classValue = [row?.class, row?.className, base?.class, base?.className, row?.grade, base?.grade]
           .find((value) => typeof value === 'string' && value.trim().length) ?? '';
-        const problemCells = row?.problems ?? row?.tasks ?? row?.results ?? row?.scores ?? row?.columns ?? row?.solutions ?? [];
+        const problemCells = getProblemCells(row);
         const perProblem = {};
         problems.forEach((problem, problemIndex) => {
           let cell;
