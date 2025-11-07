@@ -290,6 +290,8 @@
         dataSource: null
       };
 
+      let contestProblemContext = null;
+
       const elements = {
         status: document.getElementById('status'),
         groupFilter: document.getElementById('group-filter'),
@@ -403,7 +405,73 @@
         return { problems, participants };
       }
 
+      function buildProblemsFromContests(contests) {
+        const multiContest = contests.length > 1;
+        const provisional = [];
+        const locationLookup = new Map();
+        contests.forEach((contest, contestIndex) => {
+          const contestProblems = getContestProblemList(contest);
+          if (!contestProblems.length) {
+            return;
+          }
+          const built = buildProblemsFromList(contestProblems);
+          const contestId = contest?.id ?? contest?.slug ?? contest?.code ?? contest?.ejudge_id ?? `contest-${contestIndex + 1}`;
+          const contestLabel = contest?.short ?? contest?.code ?? contest?.alias ?? contestId ?? `C${contestIndex + 1}`;
+          const contestTitle = contest?.title ?? contest?.name ?? contestLabel ?? `Contest ${contestIndex + 1}`;
+          built.forEach((problem, problemIndex) => {
+            const baseId = multiContest ? `${contestId}::${problem.id}` : problem.id;
+            const shortLabel = multiContest ? `${contestLabel}-${problem.short}` : problem.short;
+            const title = multiContest ? `${contestTitle} – ${problem.title}` : problem.title;
+            provisional.push({ id: baseId, short: shortLabel, title });
+            locationLookup.set(baseId, { contestIndex, problemIndex });
+          });
+        });
+        if (!provisional.length) {
+          return { problems: [], lookup: new Map() };
+        }
+        const normalizedProblems = [];
+        const normalizedLookup = new Map();
+        const seenIds = new Set();
+        provisional.forEach((problem) => {
+          let id = problem.id || `p${normalizedProblems.length + 1}`;
+          if (seenIds.has(id)) {
+            let suffix = 1;
+            let candidate = `${id}-${suffix}`;
+            while (seenIds.has(candidate)) {
+              suffix += 1;
+              candidate = `${id}-${suffix}`;
+            }
+            id = candidate;
+          }
+          seenIds.add(id);
+          const shortLabel = problem.short && String(problem.short).trim().length ? String(problem.short) : id;
+          const title = problem.title && String(problem.title).trim().length ? String(problem.title) : shortLabel;
+          normalizedProblems.push({ id, short: shortLabel, title });
+          const location = locationLookup.get(problem.id) ?? locationLookup.get(id);
+          if (location) {
+            normalizedLookup.set(id, location);
+          }
+        });
+        return { problems: normalizedProblems, lookup: normalizedLookup };
+      }
+
+      function getContestProblemList(contest) {
+        const candidates = [
+          contest?.problems,
+          contest?.tasks,
+          contest?.legend?.problems,
+          contest?.legend?.tasks
+        ];
+        for (const candidate of candidates) {
+          if (Array.isArray(candidate) && candidate.length) {
+            return candidate;
+          }
+        }
+        return [];
+      }
+
       function deriveProblems(raw) {
+        contestProblemContext = null;
         const candidates = [
           raw?.problems,
           raw?.tasks,
@@ -427,13 +495,335 @@
             }
           }
         }
+        if (Array.isArray(raw?.contests) && raw.contests.length) {
+          const context = buildProblemsFromContests(raw.contests);
+          if (context.problems.length) {
+            contestProblemContext = context;
+            return context.problems;
+          }
+        }
         const inferred = inferProblemsFromRows(raw);
         return inferred.length ? inferred : [];
       }
 
       function deriveParticipants(raw, problems) {
+        if (contestProblemContext && contestProblemContext.lookup && contestProblemContext.lookup.size) {
+          const derived = deriveParticipantsFromContestStructure(raw, problems, contestProblemContext);
+          if (derived) {
+            return derived;
+          }
+        }
         const rows = findParticipantRows(raw);
         return rows.map((row, index) => normalizeParticipant(row, index, problems));
+      }
+
+      function deriveParticipantsFromContestStructure(raw, problems, context) {
+        if (!Array.isArray(raw?.contests) || !raw.contests.length) {
+          return null;
+        }
+        const userEntries = buildContestUserEntries(raw);
+        if (!userEntries.length) {
+          return null;
+        }
+        return userEntries.map((entry, index) => {
+          const problemCells = problems.map((problem) => {
+            const location = context.lookup.get(problem.id);
+            if (!location) {
+              return undefined;
+            }
+            const contest = raw.contests[location.contestIndex];
+            if (!contest) {
+              return undefined;
+            }
+            return extractContestCell(contest, entry, location, problem);
+          });
+          const solved = problemCells.reduce((sum, cell) => (detectSolved(cell) ? sum + 1 : sum), 0);
+          const baseUser = entry.userData && typeof entry.userData === 'object' ? { ...entry.userData } : {};
+          if (baseUser && typeof baseUser === 'object') {
+            baseUser.id = baseUser.id ?? entry.primaryId;
+          }
+          const groupValue = [
+            entry.userData?.group,
+            entry.userData?.group_short,
+            entry.userData?.groupShort,
+            entry.userData?.division,
+            entry.userData?.team_group
+          ].find((value) => typeof value === 'string' && value.trim().length) ?? '';
+          const classValue = [
+            entry.userData?.class,
+            entry.userData?.className,
+            entry.userData?.grade,
+            entry.userData?.class_short,
+            entry.userData?.classShort
+          ].find((value) => typeof value === 'string' && value.trim().length) ?? '';
+          const syntheticRow = {
+            id: entry.primaryId,
+            user: baseUser,
+            group: groupValue,
+            class: classValue,
+            problems: problemCells,
+            solved
+          };
+          return normalizeParticipant(syntheticRow, index, problems);
+        });
+      }
+
+      function buildContestUserEntries(raw) {
+        const map = new Map();
+        if (Array.isArray(raw?.users)) {
+          raw.users.forEach((user, index) => {
+            const candidates = gatherUserIdCandidates(user);
+            const fallback = `participant-${index + 1}`;
+            upsertContestUserEntry(map, candidates[0] ?? user?.id ?? fallback, user, candidates.length ? candidates : [fallback]);
+          });
+        } else if (raw?.users && typeof raw.users === 'object') {
+          Object.entries(raw.users).forEach(([key, value], index) => {
+            const candidates = gatherUserIdCandidates(value);
+            const fallback = key ?? `participant-${index + 1}`;
+            const ids = candidates.length ? candidates : [];
+            if (fallback != null) {
+              ids.unshift(String(fallback));
+            }
+            upsertContestUserEntry(map, fallback, value, ids);
+          });
+        }
+        if (Array.isArray(raw?.contests)) {
+          raw.contests.forEach((contest) => {
+            const collection = getContestUserCollection(contest);
+            if (!collection) {
+              return;
+            }
+            if (Array.isArray(collection)) {
+              collection.forEach((entry, index) => {
+                const userData = entry?.user && typeof entry.user === 'object' ? entry.user : entry;
+                const candidates = gatherUserIdCandidates(entry);
+                const fallback = userData?.id ?? entry?.id ?? `contest-user-${index + 1}`;
+                const ids = candidates.length ? candidates : [];
+                if (userData?.id != null) {
+                  ids.unshift(String(userData.id));
+                }
+                if (entry?.id != null) {
+                  ids.unshift(String(entry.id));
+                }
+                upsertContestUserEntry(map, fallback, userData, ids);
+              });
+            } else if (typeof collection === 'object') {
+              Object.entries(collection).forEach(([key, value]) => {
+                const userData = value?.user && typeof value.user === 'object' ? value.user : value;
+                const candidates = gatherUserIdCandidates(userData);
+                const ids = candidates.length ? candidates : [];
+                if (key != null) {
+                  ids.unshift(String(key));
+                }
+                upsertContestUserEntry(map, key, userData, ids);
+              });
+            }
+          });
+        }
+        return Array.from(map.values());
+      }
+
+      function upsertContestUserEntry(map, primaryId, userData, idCandidates = []) {
+        const normalizedCandidates = [];
+        idCandidates.forEach((candidate) => {
+          if (candidate == null) {
+            return;
+          }
+          const normalized = String(candidate);
+          if (!normalized) {
+            return;
+          }
+          if (!normalizedCandidates.includes(normalized)) {
+            normalizedCandidates.push(normalized);
+          }
+        });
+        if (primaryId != null) {
+          const normalized = String(primaryId);
+          if (normalized && !normalizedCandidates.includes(normalized)) {
+            normalizedCandidates.unshift(normalized);
+          }
+        }
+        if (!normalizedCandidates.length) {
+          return;
+        }
+        const key = normalizedCandidates[0];
+        const existing = map.get(key);
+        let cleanedUser;
+        if (userData && typeof userData === 'object' && !Array.isArray(userData)) {
+          cleanedUser = { ...userData };
+        } else if (typeof userData === 'string') {
+          cleanedUser = { name: userData };
+        } else {
+          cleanedUser = {};
+        }
+        if (!cleanedUser.name && key) {
+          cleanedUser.name = cleanedUser.name ?? `Participant ${key}`;
+        }
+        if (existing) {
+          existing.userData = mergeUserData(existing.userData, cleanedUser);
+          normalizedCandidates.forEach((candidate) => {
+            if (!existing.idCandidates.includes(candidate)) {
+              existing.idCandidates.push(candidate);
+            }
+          });
+          return;
+        }
+        map.set(key, {
+          primaryId: key,
+          userData: cleanedUser,
+          idCandidates: normalizedCandidates
+        });
+      }
+
+      function mergeUserData(base, incoming) {
+        if (!incoming || typeof incoming !== 'object') {
+          return base;
+        }
+        if (!base || typeof base !== 'object') {
+          return { ...incoming };
+        }
+        const merged = { ...base };
+        Object.entries(incoming).forEach(([key, value]) => {
+          if (value == null || value === '') {
+            return;
+          }
+          if (key === 'name' && typeof value === 'string') {
+            if (typeof merged.name !== 'string' || !merged.name.trim().length || value.trim().length > merged.name.trim().length) {
+              merged.name = value;
+            }
+            return;
+          }
+          if (merged[key] == null || merged[key] === '') {
+            merged[key] = value;
+          }
+        });
+        return merged;
+      }
+
+      function gatherUserIdCandidates(user) {
+        if (!user || typeof user !== 'object') {
+          return [];
+        }
+        const candidates = [
+          user.id,
+          user.user_id,
+          user.userId,
+          user.participant_id,
+          user.participantId,
+          user.contestant_id,
+          user.contestantId,
+          user.account_id,
+          user.accountId,
+          user.ejudge_id,
+          user.ej_id,
+          user.login,
+          user.username,
+          user.external_id,
+          user.externalId,
+          user.code
+        ];
+        const normalized = [];
+        candidates.forEach((candidate) => {
+          if (candidate == null) {
+            return;
+          }
+          const value = String(candidate);
+          if (!value) {
+            return;
+          }
+          if (!normalized.includes(value)) {
+            normalized.push(value);
+          }
+        });
+        return normalized;
+      }
+
+      function getContestUserCollection(contest) {
+        const candidates = [
+          contest?.users,
+          contest?.participants,
+          contest?.rows,
+          contest?.standings,
+          contest?.entries,
+          contest?.data,
+          contest?.result
+        ];
+        for (const candidate of candidates) {
+          if (candidate != null) {
+            return candidate;
+          }
+        }
+        return undefined;
+      }
+
+      function findContestUserEntry(collection, idCandidates) {
+        if (!collection) {
+          return undefined;
+        }
+        if (Array.isArray(collection)) {
+          return collection.find((entry) => {
+            if (!entry || typeof entry !== 'object') {
+              return false;
+            }
+            const entryCandidates = new Set([
+              ...gatherUserIdCandidates(entry),
+              ...(entry.user && typeof entry.user === 'object' ? gatherUserIdCandidates(entry.user) : [])
+            ]);
+            return idCandidates.some((candidate) => entryCandidates.has(candidate));
+          });
+        }
+        if (typeof collection === 'object') {
+          for (const candidate of idCandidates) {
+            if (candidate == null) {
+              continue;
+            }
+            const key = String(candidate);
+            if (Object.prototype.hasOwnProperty.call(collection, key)) {
+              return collection[key];
+            }
+          }
+        }
+        return undefined;
+      }
+
+      function extractContestCell(contest, entry, location, problem) {
+        const collection = getContestUserCollection(contest);
+        if (!collection) {
+          return undefined;
+        }
+        const contestRow = findContestUserEntry(collection, entry.idCandidates);
+        if (!contestRow) {
+          return undefined;
+        }
+        if (Array.isArray(contestRow)) {
+          return contestRow[location.problemIndex];
+        }
+        const cells = getProblemCells(contestRow);
+        if (Array.isArray(cells)) {
+          return cells[location.problemIndex];
+        }
+        if (cells && typeof cells === 'object') {
+          const keysToTry = [
+            problem.id,
+            problem.short,
+            problem.title,
+            location.problemIndex,
+            `p${location.problemIndex + 1}`
+          ];
+          for (const key of keysToTry) {
+            if (key == null) {
+              continue;
+            }
+            if (Object.prototype.hasOwnProperty.call(cells, key)) {
+              return cells[key];
+            }
+            const stringKey = String(key);
+            if (Object.prototype.hasOwnProperty.call(cells, stringKey)) {
+              return cells[stringKey];
+            }
+          }
+        }
+        return undefined;
       }
 
       function buildProblemsFromList(list) {
