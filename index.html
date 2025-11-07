@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlgoCode Standings Analyzer</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 1.5rem;
+      background: #f5f5f5;
+      color: #222;
+    }
+    body.dark {
+      background: #1c1c1c;
+      color: #f5f5f5;
+    }
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    body.dark main {
+      background: rgba(32, 32, 32, 0.95);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 1.8rem;
+      text-align: center;
+    }
+    #status {
+      margin: 1rem 0;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    body.dark #status {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    #status.error {
+      border-color: rgba(176, 0, 32, 0.4);
+      color: #b00020;
+      background: rgba(176, 0, 32, 0.08);
+    }
+    body.dark #status.error {
+      color: #ffb3c1;
+      background: rgba(176, 0, 32, 0.25);
+      border-color: rgba(255, 179, 193, 0.5);
+    }
+    #controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #controls label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9rem;
+      gap: 0.35rem;
+    }
+    #controls select,
+    #controls input[type="search"] {
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      font-size: 0.95rem;
+      min-width: 160px;
+      background: inherit;
+      color: inherit;
+    }
+    #controls button {
+      padding: 0.5rem 0.8rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+      background: #0066cc;
+      color: white;
+      transition: background 0.2s ease;
+    }
+    #controls button.secondary {
+      background: #555;
+    }
+    #controls button:hover {
+      background: #004999;
+    }
+    #controls button.secondary:hover {
+      background: #333;
+    }
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    #problem-checkboxes {
+      margin: 1.5rem 0 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+    }
+    #problem-checkboxes label {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.05);
+    }
+    body.dark #problem-checkboxes label {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+    }
+    thead {
+      background: rgba(0, 0, 0, 0.08);
+    }
+    body.dark thead {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    th, td {
+      padding: 0.6rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      text-align: left;
+    }
+    th.shrink,
+    td.shrink {
+      text-align: center;
+      width: 3rem;
+    }
+    tr:nth-child(even) {
+      background: rgba(0, 0, 0, 0.03);
+    }
+    body.dark tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .badge {
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: #e0f2ff;
+      color: #005a9e;
+    }
+    body.dark .badge {
+      background: rgba(0, 102, 204, 0.25);
+      color: #8cc8ff;
+    }
+    .muted {
+      color: rgba(0, 0, 0, 0.6);
+    }
+    body.dark .muted {
+      color: rgba(255, 255, 255, 0.6);
+    }
+    @media (max-width: 900px) {
+      table {
+        font-size: 0.85rem;
+      }
+      th, td {
+        padding: 0.45rem;
+      }
+      #controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      #controls label {
+        width: 100%;
+      }
+      #controls button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>AlgoCode Standings Analyzer</h1>
+    <section id="controls">
+      <label>
+        Group filter
+        <select id="group-filter">
+          <option value="__ALL__">All groups</option>
+        </select>
+      </label>
+      <label>
+        Name/Class filter
+        <input id="search-filter" type="search" placeholder="Type to filter participants" aria-label="Filter participants" />
+      </label>
+      <div class="button-row">
+        <button id="select-all" class="secondary" type="button">Select all problems</button>
+        <button id="clear-selection" class="secondary" type="button">Clear selection</button>
+        <button id="export" type="button">Export CSV</button>
+      </div>
+    </section>
+    <section id="problem-checkboxes" aria-label="Problem selection"></section>
+    <div id="status" role="status">Loading standings…</div>
+    <div class="table-wrapper">
+      <table id="standings">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    (function () {
+      const API_URL = 'https://algocode.ru/standings_data/bp_fall_2025';
+      const DATA_SOURCES = [
+        {
+          url: 'standings_data/bp_fall_2025.json',
+          label: 'Cached snapshot',
+          mode: 'same-origin'
+        },
+        {
+          url: API_URL,
+          label: 'Live standings',
+          mode: 'cors'
+        }
+      ];
+      const state = {
+        problems: [],
+        participants: [],
+        selectedProblems: new Set(),
+        group: '__ALL__',
+        search: '',
+        dataSource: null
+      };
+
+      const elements = {
+        status: document.getElementById('status'),
+        groupFilter: document.getElementById('group-filter'),
+        searchFilter: document.getElementById('search-filter'),
+        problemContainer: document.getElementById('problem-checkboxes'),
+        tableHead: document.querySelector('#standings thead'),
+        tableBody: document.querySelector('#standings tbody'),
+        selectAll: document.getElementById('select-all'),
+        clearSelection: document.getElementById('clear-selection'),
+        exportButton: document.getElementById('export')
+      };
+
+      function setStatus(message, options = {}) {
+        const { isError = false, detail } = options;
+        elements.status.classList.toggle('error', Boolean(isError));
+        elements.status.innerHTML = '';
+        const summary = document.createElement('div');
+        summary.textContent = message;
+        elements.status.append(summary);
+        if (detail) {
+          const detailElement = document.createElement('div');
+          detailElement.classList.add('muted');
+          detailElement.textContent = detail;
+          elements.status.append(detailElement);
+        }
+      }
+
+      async function loadStandings() {
+        try {
+          setStatus('Loading standings…');
+          const errors = [];
+          for (const source of DATA_SOURCES) {
+            try {
+              const data = await fetchStandingsFromSource(source);
+              const normalized = normalizeStandings(data);
+              state.problems = normalized.problems;
+              state.participants = normalized.participants;
+              state.selectedProblems = new Set(state.problems.map((problem) => problem.id));
+              state.dataSource = source;
+              renderGroupFilter();
+              renderProblemCheckboxes();
+              renderTable();
+              const detailParts = [`Source: ${source.label}`];
+              if (source.url) {
+                detailParts.push(source.url);
+              }
+              setStatus(
+                `Loaded ${state.participants.length} participants and ${state.problems.length} problems.`,
+                { detail: detailParts.join(' • ') }
+              );
+              return;
+            } catch (sourceError) {
+              console.error(`Failed to fetch standings from ${source.label}:`, sourceError);
+              let message = sourceError?.message || 'Unknown error';
+              if (sourceError instanceof TypeError && message === 'Failed to fetch') {
+                message = 'Failed to fetch (network error or CORS blocked)';
+              }
+              errors.push(`${source.label}: ${message}`);
+            }
+          }
+          const detailMessage = errors.length ? `Tried ${errors.length} source(s): ${errors.join(' | ')}` : undefined;
+          throw new Error(detailMessage || 'Unable to load standings from any source.');
+        } catch (error) {
+          console.error(error);
+          setStatus('Failed to load standings.', { isError: true, detail: error.message });
+        }
+      }
+
+      async function fetchStandingsFromSource(source) {
+        const response = await fetch(source.url, {
+          headers: { 'Accept': 'application/json, text/plain, */*' },
+          cache: 'no-store',
+          mode: source.mode || 'cors'
+        });
+        const payloadText = await response.text();
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} ${response.statusText || ''}`.trim());
+        }
+        try {
+          return JSON.parse(payloadText);
+        } catch (parseError) {
+          throw new Error('Response was not valid JSON.');
+        }
+      }
+
+      function normalizeStandings(raw) {
+        const problems = deriveProblems(raw);
+        const participants = deriveParticipants(raw, problems);
+        return { problems, participants };
+      }
+
+      function deriveProblems(raw) {
+        const candidates = [
+          raw?.problems,
+          raw?.tasks,
+          raw?.columns,
+          raw?.problem_columns,
+          raw?.legend?.problems,
+          raw?.legend?.tasks,
+          raw?.header?.problems,
+          raw?.header?.tasks
+        ];
+        let list = candidates.find((item) => Array.isArray(item) && item.length);
+        if (!list && raw?.problems && typeof raw.problems === 'object') {
+          list = Object.values(raw.problems);
+        }
+        if (!Array.isArray(list)) {
+          return [];
+        }
+        const seenIds = new Set();
+        return list.map((item, index) => {
+          const asObject = typeof item === 'object' && item !== null;
+          const idCandidate = asObject ? (item.id ?? item.problem ?? item.code ?? item.short ?? item.letter ?? item.alias ?? item.name) : item;
+          let id = idCandidate ? String(idCandidate) : `p${index + 1}`;
+          if (seenIds.has(id)) {
+            id = `${id}-${index}`;
+          }
+          seenIds.add(id);
+          const shortLabel = asObject ? (item.short ?? item.letter ?? item.code ?? item.alias ?? item.id) : item;
+          const title = asObject ? (item.title ?? item.name ?? item.problem ?? item.description ?? shortLabel ?? id) : item;
+          return {
+            id,
+            short: shortLabel ? String(shortLabel) : `P${index + 1}`,
+            title: title ? String(title) : `Problem ${index + 1}`
+          };
+        });
+      }
+
+      function deriveParticipants(raw, problems) {
+        const candidateArrays = [
+          raw?.rows,
+          raw?.participants,
+          raw?.standings,
+          raw?.data,
+          raw?.table,
+          raw?.users,
+          raw?.result,
+          raw?.entries,
+          Array.isArray(raw) ? raw : undefined
+        ];
+        const rows = candidateArrays.find((entry) => Array.isArray(entry) && entry.length) ?? [];
+        return rows.map((row, index) => normalizeParticipant(row, index, problems));
+      }
+
+      function normalizeParticipant(row, index, problems) {
+        const base = row?.user ?? row?.participant ?? row?.party ?? row?.team ?? row?.contestant ?? row?.student ?? row;
+        const members = Array.isArray(base?.members) ? base.members : Array.isArray(row?.members) ? row.members : undefined;
+        const composedName = members ? members.map((member) => member?.name ?? member?.title ?? '').filter(Boolean).join(', ') : undefined;
+        const name = [
+          base?.name,
+          base?.title,
+          base?.displayName,
+          composedName,
+          row?.name,
+          row?.title,
+          `Participant ${index + 1}`
+        ].find((value) => typeof value === 'string' && value.trim().length) ?? `Participant ${index + 1}`;
+        const groupValue = [row?.group, base?.group, row?.division, base?.division, row?.team_group, base?.team_group]
+          .find((value) => typeof value === 'string' && value.trim().length) ?? '';
+        const classValue = [row?.class, row?.className, base?.class, base?.className, row?.grade, base?.grade]
+          .find((value) => typeof value === 'string' && value.trim().length) ?? '';
+        const problemCells = row?.problems ?? row?.tasks ?? row?.results ?? row?.scores ?? row?.columns ?? row?.solutions ?? [];
+        const perProblem = {};
+        problems.forEach((problem, problemIndex) => {
+          let cell;
+          if (Array.isArray(problemCells)) {
+            cell = problemCells[problemIndex];
+          } else if (problemCells && typeof problemCells === 'object') {
+            const keysToTry = [problem.id, problem.short, problem.title, problemIndex, `p${problemIndex + 1}`];
+            for (const key of keysToTry) {
+              if (key !== undefined && key !== null && Object.prototype.hasOwnProperty.call(problemCells, key)) {
+                cell = problemCells[key];
+                break;
+              }
+            }
+          }
+          perProblem[problem.id] = {
+            solved: detectSolved(cell),
+            display: formatCell(cell)
+          };
+        });
+        const fallbackSolved = typeof row?.solved === 'number' ? row.solved : (typeof row?.score === 'number' ? row.score : undefined);
+        return {
+          id: row?.id ?? base?.id ?? index,
+          name: String(name),
+          group: groupValue,
+          className: classValue,
+          problems: perProblem,
+          fallbackSolved: fallbackSolved
+        };
+      }
+
+      function detectSolved(cell) {
+        if (cell == null) {
+          return false;
+        }
+        if (typeof cell === 'boolean') {
+          return cell;
+        }
+        if (typeof cell === 'number') {
+          return cell > 0;
+        }
+        if (typeof cell === 'string') {
+          const trimmed = cell.trim();
+          if (!trimmed) {
+            return false;
+          }
+          const numeric = Number(trimmed);
+          if (!Number.isNaN(numeric)) {
+            return numeric > 0;
+          }
+          const normalized = trimmed.toLowerCase();
+          return ['ac', 'ok', 'accepted', 'solved', 'yes', 'true', '+', '✔', '✓', '1'].includes(normalized);
+        }
+        if (typeof cell === 'object') {
+          if (Object.prototype.hasOwnProperty.call(cell, 'solved')) {
+            return Boolean(cell.solved);
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'isSolved')) {
+            return Boolean(cell.isSolved);
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'ok')) {
+            return Boolean(cell.ok);
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'score')) {
+            return Number(cell.score) > 0;
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'points')) {
+            return Number(cell.points) > 0;
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'value')) {
+            return Number(cell.value) > 0;
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'result')) {
+            const normalized = String(cell.result).toLowerCase();
+            return ['ac', 'ok', 'accepted', 'solved', 'yes', 'true', '+', '✔', '✓', '1'].includes(normalized);
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'status')) {
+            const normalized = String(cell.status).toLowerCase();
+            return ['ac', 'ok', 'accepted', 'solved', 'yes', 'true', '+', '✔', '✓'].includes(normalized);
+          }
+        }
+        return false;
+      }
+
+      function formatCell(cell) {
+        if (cell == null) {
+          return '';
+        }
+        if (typeof cell === 'object') {
+          if (Object.prototype.hasOwnProperty.call(cell, 'display')) {
+            return String(cell.display);
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'result')) {
+            return String(cell.result);
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'score')) {
+            return String(cell.score);
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'value')) {
+            return String(cell.value);
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'points')) {
+            return String(cell.points);
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'attempts') || Object.prototype.hasOwnProperty.call(cell, 'penalty')) {
+            const attempts = cell.attempts ?? cell.tries;
+            const penalty = cell.penalty ?? cell.time;
+            const parts = [];
+            if (attempts != null) {
+              parts.push(`${attempts} tries`);
+            }
+            if (penalty != null) {
+              parts.push(`${penalty}`);
+            }
+            if (parts.length) {
+              return parts.join(', ');
+            }
+          }
+          if (Object.prototype.hasOwnProperty.call(cell, 'ok')) {
+            return cell.ok ? '✓' : '✗';
+          }
+          return JSON.stringify(cell);
+        }
+        return String(cell);
+      }
+
+      function renderGroupFilter() {
+        const groups = new Map();
+        groups.set('__ALL__', { label: 'All groups', value: '__ALL__' });
+        state.participants.forEach((participant) => {
+          const rawValue = participant.group?.trim() ?? '';
+          const key = rawValue || '__EMPTY__';
+          if (!groups.has(key)) {
+            groups.set(key, {
+              label: rawValue || '—',
+              value: key
+            });
+          }
+        });
+        const options = Array.from(groups.values()).sort((a, b) => {
+          if (a.value === '__ALL__') return -1;
+          if (b.value === '__ALL__') return 1;
+          return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
+        });
+        elements.groupFilter.innerHTML = '';
+        options.forEach((option) => {
+          const opt = document.createElement('option');
+          opt.value = option.value;
+          opt.textContent = option.label;
+          if (option.value === state.group) {
+            opt.selected = true;
+          }
+          elements.groupFilter.append(opt);
+        });
+      }
+
+      function renderProblemCheckboxes() {
+        elements.problemContainer.innerHTML = '';
+        if (!state.problems.length) {
+          const span = document.createElement('span');
+          span.textContent = 'No problems found in the standings.';
+          elements.problemContainer.append(span);
+          return;
+        }
+        state.problems.forEach((problem) => {
+          const label = document.createElement('label');
+          label.title = problem.title;
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.value = problem.id;
+          checkbox.checked = state.selectedProblems.has(problem.id);
+          checkbox.addEventListener('change', (event) => {
+            const { checked, value } = event.target;
+            if (checked) {
+              state.selectedProblems.add(value);
+            } else {
+              state.selectedProblems.delete(value);
+            }
+            renderTable();
+          });
+          const text = document.createElement('span');
+          text.textContent = problem.short;
+          label.append(checkbox, text);
+          elements.problemContainer.append(label);
+        });
+      }
+
+      function computeSolvedCount(participant) {
+        let solved = 0;
+        const selectedProblems = state.selectedProblems.size ? state.selectedProblems : new Set(state.problems.map((problem) => problem.id));
+        selectedProblems.forEach((problemId) => {
+          if (participant.problems[problemId]?.solved) {
+            solved += 1;
+          }
+        });
+        if (!solved && selectedProblems.size === state.problems.length && typeof participant.fallbackSolved === 'number') {
+          solved = participant.fallbackSolved;
+        }
+        return solved;
+      }
+
+      function filterParticipants() {
+        return state.participants.filter((participant) => {
+          const matchesGroup = state.group === '__ALL__'
+            ? true
+            : state.group === '__EMPTY__'
+              ? (participant.group?.trim() ?? '') === ''
+              : (participant.group?.trim() ?? '') === state.group;
+          if (!matchesGroup) {
+            return false;
+          }
+          if (!state.search) {
+            return true;
+          }
+          const haystack = `${participant.name} ${participant.group ?? ''} ${participant.className ?? ''}`.toLowerCase();
+          return haystack.includes(state.search);
+        });
+      }
+
+      function getVisibleProblems() {
+        if (!state.selectedProblems.size) {
+          return [];
+        }
+        return state.problems.filter((problem) => state.selectedProblems.has(problem.id));
+      }
+
+      function renderTable() {
+        const visibleProblems = getVisibleProblems();
+        const filtered = filterParticipants().map((participant) => ({
+          ...participant,
+          solvedCount: computeSolvedCount(participant)
+        }));
+        filtered.sort((a, b) => {
+          if (b.solvedCount !== a.solvedCount) {
+            return b.solvedCount - a.solvedCount;
+          }
+          return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+        });
+
+        elements.tableHead.innerHTML = '';
+        const headerRow = document.createElement('tr');
+        [
+          { text: '#', className: 'shrink' },
+          { text: 'Participant' },
+          { text: 'Group' },
+          { text: 'Class' },
+          { text: 'Solved', className: 'shrink' }
+        ].forEach((column) => {
+          const th = document.createElement('th');
+          th.textContent = column.text;
+          if (column.className) {
+            th.classList.add(column.className);
+          }
+          headerRow.append(th);
+        });
+        visibleProblems.forEach((problem) => {
+          const th = document.createElement('th');
+          th.classList.add('shrink');
+          th.textContent = problem.short;
+          th.title = problem.title;
+          headerRow.append(th);
+        });
+        elements.tableHead.append(headerRow);
+
+        elements.tableBody.innerHTML = '';
+        if (!filtered.length) {
+          const row = document.createElement('tr');
+          const cell = document.createElement('td');
+          cell.colSpan = 5 + visibleProblems.length;
+          cell.textContent = 'No participants match the current filters.';
+          row.append(cell);
+          elements.tableBody.append(row);
+          return;
+        }
+
+        filtered.forEach((participant, index) => {
+          const row = document.createElement('tr');
+          const rankCell = document.createElement('td');
+          rankCell.textContent = String(index + 1);
+          rankCell.classList.add('shrink');
+          row.append(rankCell);
+
+          const nameCell = document.createElement('td');
+          nameCell.textContent = participant.name;
+          row.append(nameCell);
+
+          const groupCell = document.createElement('td');
+          groupCell.textContent = participant.group || '—';
+          row.append(groupCell);
+
+          const classCell = document.createElement('td');
+          classCell.textContent = participant.className || '—';
+          row.append(classCell);
+
+          const solvedCell = document.createElement('td');
+          solvedCell.classList.add('shrink');
+          solvedCell.innerHTML = `<span class="badge">${participant.solvedCount}</span>`;
+          row.append(solvedCell);
+
+          visibleProblems.forEach((problem) => {
+            const cell = document.createElement('td');
+            cell.classList.add('shrink');
+            const entry = participant.problems[problem.id];
+            cell.textContent = entry?.solved ? '✓' : '—';
+            if (entry?.display && entry.display !== '✓' && entry.display !== '—') {
+              cell.title = entry.display;
+            }
+            row.append(cell);
+          });
+          elements.tableBody.append(row);
+        });
+      }
+
+      function exportCsv() {
+        const visibleProblems = getVisibleProblems();
+        const filtered = filterParticipants().map((participant) => ({
+          ...participant,
+          solvedCount: computeSolvedCount(participant)
+        })).sort((a, b) => {
+          if (b.solvedCount !== a.solvedCount) {
+            return b.solvedCount - a.solvedCount;
+          }
+          return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+        });
+        const header = ['Rank', 'Participant', 'Group', 'Class', 'Solved'];
+        visibleProblems.forEach((problem) => header.push(problem.short));
+        const rows = [header];
+        filtered.forEach((participant, index) => {
+          const row = [
+            index + 1,
+            escapeCsv(participant.name),
+            escapeCsv(participant.group || ''),
+            escapeCsv(participant.className || ''),
+            participant.solvedCount
+          ];
+          visibleProblems.forEach((problem) => {
+            const entry = participant.problems[problem.id];
+            row.push(escapeCsv(entry?.display ?? (entry?.solved ? 'Solved' : '')));
+          });
+          rows.push(row);
+        });
+        const csvContent = rows.map((row) => row.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'algocode-standings.csv';
+        link.style.display = 'none';
+        document.body.append(link);
+        link.click();
+        setTimeout(() => {
+          URL.revokeObjectURL(link.href);
+          link.remove();
+        }, 0);
+      }
+
+      function escapeCsv(value) {
+        const stringValue = String(value ?? '');
+        if (/[",\n]/.test(stringValue)) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        return stringValue;
+      }
+
+      elements.groupFilter.addEventListener('change', (event) => {
+        state.group = event.target.value;
+        renderTable();
+      });
+
+      elements.searchFilter.addEventListener('input', (event) => {
+        state.search = event.target.value.trim().toLowerCase();
+        renderTable();
+      });
+
+      elements.selectAll.addEventListener('click', () => {
+        state.selectedProblems = new Set(state.problems.map((problem) => problem.id));
+        renderProblemCheckboxes();
+        renderTable();
+      });
+
+      elements.clearSelection.addEventListener('click', () => {
+        state.selectedProblems.clear();
+        renderProblemCheckboxes();
+        renderTable();
+      });
+
+      elements.exportButton.addEventListener('click', () => {
+        exportCsv();
+      });
+
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+      }
+
+      loadStandings();
+    })();
+  </script>
+</body>
+</html>
