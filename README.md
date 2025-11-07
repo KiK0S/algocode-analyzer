@@ -12,7 +12,7 @@ The site is published automatically to GitHub Pages via the included workflow (`
 
 Open `index.html` in any modern browser. By default, the page looks for a same-origin snapshot at `standings_data/bp_fall_2025.json` and falls back to the live endpoint (`https://algocode.ru/standings_data/bp_fall_2025`) if the cached copy is missing.
 
-If the live endpoint blocks cross-origin requests, the UI will continue using the cached snapshot and surface an error in the status banner.
+If the live endpoint blocks cross-origin requests, the UI will continue using the cached snapshot and surface an error in the status banner. When both sources fail, the app now bundles a tiny sample dataset so you can still interact with the interface while tracking down the data issue.
 
 ## Updating the cached snapshot
 
@@ -22,7 +22,7 @@ Use the helper script to refresh the local snapshot:
 ./scripts/fetch-standings.sh
 ```
 
-The script downloads the latest standings into `standings_data/bp_fall_2025.json`, which is the file that GitHub Pages will serve alongside the site. You can point the script at an alternate output directory by passing a path argument, e.g. `./scripts/fetch-standings.sh public/standings_data`.
+The script downloads the latest standings into `standings_data/bp_fall_2025.json`, which is the file that GitHub Pages will serve alongside the site. The helper refuses to overwrite the snapshot with an empty file so failed downloads don't blank the published data. You can point the script at an alternate output directory by passing a path argument, e.g. `./scripts/fetch-standings.sh public/standings_data`.
 
 > The repository includes a tiny sample dataset so the UI works offline—be sure to refresh it before relying on the numbers.
 
