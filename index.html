@@ -82,6 +82,7 @@
       background: inherit;
       color: inherit;
     }
+    #controls .button,
     #controls button {
       padding: 0.5rem 0.8rem;
       border-radius: 6px;
@@ -92,14 +93,23 @@
       color: white;
       transition: background 0.2s ease;
     }
+    #controls .button.secondary,
     #controls button.secondary {
       background: #555;
     }
+    #controls .button:hover,
     #controls button:hover {
       background: #004999;
     }
+    #controls .button.secondary:hover,
     #controls button.secondary:hover {
       background: #333;
+    }
+    #controls .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
     }
     .button-row {
       display: flex;
@@ -183,6 +193,7 @@
       #controls label {
         width: 100%;
       }
+      #controls .button,
       #controls button {
         width: 100%;
       }
@@ -207,6 +218,7 @@
         <button id="select-all" class="secondary" type="button">Select all problems</button>
         <button id="clear-selection" class="secondary" type="button">Clear selection</button>
         <button id="export" type="button">Export CSV</button>
+        <a id="view-snapshot" class="button secondary" href="standings_data/bp_fall_2025.json" target="_blank" rel="noopener">Open snapshot</a>
       </div>
     </section>
     <section id="problem-checkboxes" aria-label="Problem selection"></section>
@@ -233,6 +245,42 @@
           mode: 'cors'
         }
       ];
+      const FALLBACK_SNAPSHOT = {
+        legend: {
+          problems: [
+            { code: 'A', title: 'Intro Problem' },
+            { code: 'B', title: 'Graphs Warmup' },
+            { code: 'C', title: 'Dynamic Programming' }
+          ]
+        },
+        rows: [
+          {
+            user: { name: 'Alice Example', group: 'B1', class: '10' },
+            problems: [
+              { result: 'AC' },
+              { result: 'AC' },
+              { result: 'WA' }
+            ]
+          },
+          {
+            user: { name: 'Bob Sample', group: 'B1', class: '10' },
+            problems: [
+              { result: 'WA' },
+              { result: 'AC' },
+              { result: 'AC' }
+            ]
+          },
+          {
+            user: { name: 'Charlie Demo', group: 'B2', class: '11' },
+            problems: [
+              { result: 'AC' },
+              { result: 'WA' },
+              { result: 'WA' }
+            ]
+          }
+        ]
+      };
+
       const state = {
         problems: [],
         participants: [],
@@ -302,6 +350,25 @@
               errors.push(`${source.label}: ${message}`);
             }
           }
+          if (FALLBACK_SNAPSHOT) {
+            const normalized = normalizeStandings(FALLBACK_SNAPSHOT);
+            state.problems = normalized.problems;
+            state.participants = normalized.participants;
+            state.selectedProblems = new Set(state.problems.map((problem) => problem.id));
+            state.dataSource = { label: 'Bundled sample standings' };
+            renderGroupFilter();
+            renderProblemCheckboxes();
+            renderTable();
+            const detailParts = ['Source: Bundled sample standings'];
+            if (errors.length) {
+              detailParts.push(`Previous errors: ${errors.join(' | ')}`);
+            }
+            setStatus(
+              `Loaded ${state.participants.length} participants and ${state.problems.length} problems.`,
+              { detail: detailParts.join(' • ') }
+            );
+            return;
+          }
           const detailMessage = errors.length ? `Tried ${errors.length} source(s): ${errors.join(' | ')}` : undefined;
           throw new Error(detailMessage || 'Unable to load standings from any source.');
         } catch (error) {
@@ -319,6 +386,9 @@
         const payloadText = await response.text();
         if (!response.ok) {
           throw new Error(`HTTP ${response.status} ${response.statusText || ''}`.trim());
+        }
+        if (!payloadText.trim()) {
+          throw new Error('Response was empty.');
         }
         try {
           return JSON.parse(payloadText);
