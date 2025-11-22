@@ -1502,6 +1502,77 @@
         };
       }
 
+      function normalizeStatusText(value) {
+        if (value == null) return '';
+        return String(value)
+          .trim()
+          .toLowerCase()
+          .replace(/[_-]+/g, ' ');
+      }
+
+      function extractStatusString(cell) {
+        const statusFields = [
+          'display',
+          'result',
+          'status_verbose',
+          'statusText',
+          'status',
+          'verdictText',
+          'verdict',
+          'bestVerdict',
+          'best_verdict',
+          'bestResult',
+          'best_result',
+          'maxResult',
+          'max_result',
+          'outcome',
+          'text',
+          'label'
+        ];
+        for (const key of statusFields) {
+          if (Object.prototype.hasOwnProperty.call(cell, key)) {
+            const text = String(cell[key]).trim();
+            if (text) {
+              return text;
+            }
+          }
+        }
+        return '';
+      }
+
+      function statusImpliesSolved(statusText) {
+        const normalized = normalizeStatusText(statusText);
+        if (!normalized) return false;
+        const positiveKeywords = [
+          'ac',
+          'ok',
+          'accepted',
+          'solved',
+          'yes',
+          'true',
+          '+',
+          '✔',
+          '✓',
+          'passed',
+          'complete',
+          'success',
+          'done'
+        ];
+        if (positiveKeywords.includes(normalized)) {
+          return true;
+        }
+        return [
+          'ac',
+          'ok',
+          'accept',
+          'solve',
+          'pass',
+          'success',
+          'done',
+          'complete'
+        ].some((token) => normalized.includes(token));
+      }
+
       function detectSolved(cell) {
         if (cell == null) {
           return false;
@@ -1521,8 +1592,7 @@
           if (!Number.isNaN(numeric)) {
             return numeric > 0;
           }
-          const normalized = trimmed.toLowerCase();
-          return ['ac', 'ok', 'accepted', 'solved', 'yes', 'true', '+', '✔', '✓', '1'].includes(normalized);
+          return statusImpliesSolved(trimmed);
         }
         if (typeof cell === 'object') {
           if (Object.prototype.hasOwnProperty.call(cell, 'solved')) {
@@ -1534,22 +1604,23 @@
           if (Object.prototype.hasOwnProperty.call(cell, 'ok')) {
             return Boolean(cell.ok);
           }
-          if (Object.prototype.hasOwnProperty.call(cell, 'score')) {
-            return Number(cell.score) > 0;
+          const numericCandidates = [
+            cell.score,
+            cell.points,
+            cell.value,
+            cell.max_result,
+            cell.maxResult,
+            cell.best_score,
+            cell.bestScore
+          ];
+          for (const candidate of numericCandidates) {
+            if (candidate != null && !Number.isNaN(Number(candidate))) {
+              return Number(candidate) > 0;
+            }
           }
-          if (Object.prototype.hasOwnProperty.call(cell, 'points')) {
-            return Number(cell.points) > 0;
-          }
-          if (Object.prototype.hasOwnProperty.call(cell, 'value')) {
-            return Number(cell.value) > 0;
-          }
-          if (Object.prototype.hasOwnProperty.call(cell, 'result')) {
-            const normalized = String(cell.result).toLowerCase();
-            return ['ac', 'ok', 'accepted', 'solved', 'yes', 'true', '+', '✔', '✓', '1'].includes(normalized);
-          }
-          if (Object.prototype.hasOwnProperty.call(cell, 'status')) {
-            const normalized = String(cell.status).toLowerCase();
-            return ['ac', 'ok', 'accepted', 'solved', 'yes', 'true', '+', '✔', '✓'].includes(normalized);
+          const statusText = extractStatusString(cell);
+          if (statusText) {
+            return statusImpliesSolved(statusText);
           }
         }
         return false;
@@ -1560,34 +1631,26 @@
           return '';
         }
         if (typeof cell === 'object') {
-          if (Object.prototype.hasOwnProperty.call(cell, 'display')) {
-            return String(cell.display);
+          const statusText = extractStatusString(cell);
+          const attempts = cell.attempts ?? cell.tries;
+          const penalty = cell.penalty ?? cell.time ?? cell.minutes;
+          const numericScore =
+            cell.score ?? cell.points ?? cell.value ?? cell.max_result ?? cell.maxResult ?? cell.best_score ?? cell.bestScore;
+          const parts = [];
+          if (statusText) {
+            parts.push(statusText);
           }
-          if (Object.prototype.hasOwnProperty.call(cell, 'result')) {
-            return String(cell.result);
+          if (attempts != null) {
+            parts.push(`${attempts} tries`);
           }
-          if (Object.prototype.hasOwnProperty.call(cell, 'score')) {
-            return String(cell.score);
+          if (penalty != null) {
+            parts.push(`${penalty}`);
           }
-          if (Object.prototype.hasOwnProperty.call(cell, 'value')) {
-            return String(cell.value);
+          if (parts.length) {
+            return parts.join(' · ');
           }
-          if (Object.prototype.hasOwnProperty.call(cell, 'points')) {
-            return String(cell.points);
-          }
-          if (Object.prototype.hasOwnProperty.call(cell, 'attempts') || Object.prototype.hasOwnProperty.call(cell, 'penalty')) {
-            const attempts = cell.attempts ?? cell.tries;
-            const penalty = cell.penalty ?? cell.time;
-            const parts = [];
-            if (attempts != null) {
-              parts.push(`${attempts} tries`);
-            }
-            if (penalty != null) {
-              parts.push(`${penalty}`);
-            }
-            if (parts.length) {
-              return parts.join(', ');
-            }
+          if (numericScore != null) {
+            return String(numericScore);
           }
           if (Object.prototype.hasOwnProperty.call(cell, 'ok')) {
             return cell.ok ? '✓' : '✗';
