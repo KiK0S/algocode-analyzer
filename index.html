@@ -594,6 +594,20 @@
         return [];
       }
 
+      function buildIdSet(values = []) {
+        const set = new Set();
+        normalizeIdList(values).forEach((entry) => {
+          set.add(entry);
+          if (entry.includes('::')) {
+            const suffix = entry.split('::').pop();
+            if (suffix) {
+              set.add(suffix);
+            }
+          }
+        });
+        return set;
+      }
+
       function normalizePreset(raw, index) {
         if (!raw || typeof raw !== 'object') {
           return null;
@@ -692,10 +706,10 @@
             nextSelected.add(problem.id);
           });
         }
-        const includeContestSet = new Set(preset.contests.map((id) => id.toString()));
-        const includeProblemSet = new Set(preset.problems.map((id) => id.toString()));
-        const excludeContestSet = new Set(preset.excludeContests.map((id) => id.toString()));
-        const excludeProblemSet = new Set(preset.excludeProblems.map((id) => id.toString()));
+        const includeContestSet = buildIdSet(preset.contests);
+        const includeProblemSet = buildIdSet(preset.problems);
+        const excludeContestSet = buildIdSet(preset.excludeContests);
+        const excludeProblemSet = buildIdSet(preset.excludeProblems);
 
         if (includeContestSet.size || includeProblemSet.size || preset.select === 'only' || preset.select === 'none') {
           if (preset.select !== 'all') {
@@ -703,12 +717,29 @@
             nextSelected.clear();
           }
           state.problems.forEach((problem) => {
-            const contestMatches = includeContestSet.has(String(problem.contestId));
-            const problemMatches = includeProblemSet.has(problem.id)
-              || includeProblemSet.has(problem.originalId ?? '')
-              || includeProblemSet.has(problem.short ?? '')
-              || includeProblemSet.has(problem.problemCode ?? '')
-              || includeProblemSet.has(problem.displayCode ?? '');
+            const contestMatches = [
+              problem.contestId,
+              problem.contestLabel,
+              problem.contestTitle,
+              problem.displayContest
+            ]
+              .map((value) => (value == null ? '' : String(value)))
+              .some((value) => value && includeContestSet.has(value));
+            const aliases = [
+              problem.id,
+              problem.originalId,
+              problem.short,
+              problem.problemCode,
+              problem.displayCode
+            ];
+            if (problem.contestId) {
+              const contestPrefix = String(problem.contestId);
+              aliases.push(`${contestPrefix}::${problem.short ?? problem.id}`);
+              aliases.push(`${contestPrefix}::${problem.displayCode ?? problem.short ?? problem.id}`);
+            }
+            const problemMatches = aliases
+              .map((value) => (value == null ? '' : String(value)))
+              .some((value) => value && includeProblemSet.has(value));
             if (contestMatches || problemMatches) {
               nextSelected.add(problem.id);
             }
@@ -717,17 +748,34 @@
 
         if (excludeContestSet.size || excludeProblemSet.size) {
           state.problems.forEach((problem) => {
-            if (excludeContestSet.has(String(problem.contestId))) {
+            const contestMatches = [
+              problem.contestId,
+              problem.contestLabel,
+              problem.contestTitle,
+              problem.displayContest
+            ]
+              .map((value) => (value == null ? '' : String(value)))
+              .some((value) => value && excludeContestSet.has(value));
+            if (contestMatches) {
               nextSelected.delete(problem.id);
               return;
             }
-            if (
-              excludeProblemSet.has(problem.id)
-              || excludeProblemSet.has(problem.originalId ?? '')
-              || excludeProblemSet.has(problem.short ?? '')
-              || excludeProblemSet.has(problem.problemCode ?? '')
-              || excludeProblemSet.has(problem.displayCode ?? '')
-            ) {
+            const aliases = [
+              problem.id,
+              problem.originalId,
+              problem.short,
+              problem.problemCode,
+              problem.displayCode
+            ];
+            if (problem.contestId) {
+              const contestPrefix = String(problem.contestId);
+              aliases.push(`${contestPrefix}::${problem.short ?? problem.id}`);
+              aliases.push(`${contestPrefix}::${problem.displayCode ?? problem.short ?? problem.id}`);
+            }
+            const problemMatches = aliases
+              .map((value) => (value == null ? '' : String(value)))
+              .some((value) => value && excludeProblemSet.has(value));
+            if (problemMatches) {
               nextSelected.delete(problem.id);
             }
           });
