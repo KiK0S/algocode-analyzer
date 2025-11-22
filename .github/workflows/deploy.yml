@@ -31,6 +31,12 @@ jobs:
           set -euo pipefail
           mkdir -p public
           cp index.html public/index.html
+          mkdir -p public/standings_data
+          if [ -f standings_data/problem_filter_presets.json ]; then
+            cp standings_data/problem_filter_presets.json public/standings_data/problem_filter_presets.json
+          else
+            echo "No problem filter presets found; skipping copy"
+          fi
           if ./scripts/fetch-standings.sh public/standings_data; then
             echo "Fetched live standings snapshot"
           else
