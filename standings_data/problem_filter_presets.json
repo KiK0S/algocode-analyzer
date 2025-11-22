@@ -6,18 +6,13 @@
     "select": "all"
   },
   {
-    "id": "dp-focus",
-    "label": "Dynamic programming focus",
-    "description": "Keeps only the Bootcamp Fall 2025 contest and highlights a pair of late DP tasks.",
+    "id": "deadline-1",
+    "label": "first deadline",
+    "description": "first deadline: sorts, c++, binsearch", 
     "select": "none",
-    "contests": ["bp_fall_2025"],
-    "problems": ["bp_fall_2025::F", "bp_fall_2025::G"]
-  },
-  {
-    "id": "sample-starter",
-    "label": "Sample snapshot starter",
-    "description": "Example preset for the bundled sample data that keeps the first two tasks.",
-    "select": "none",
-    "problems": ["A", "B"]
+    "contests": ["2472","2483","2509"],
+    "problems": ["2472::A","2472::B","2472::C","2472::D","2472::E","2472::G","2472::I","2472::J",
+    "2483::A","2483::C","2483::F","2483::H",
+    "2509::A","2509::B","2509::D","2509::G","2509::H","2509::I","2509::O"]
   }
 ]
