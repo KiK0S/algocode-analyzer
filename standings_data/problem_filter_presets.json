@@ -29,7 +29,7 @@
     "2580::A","2580::C","2580::G","2580::H","2580::J"]
   }
   {
-    "id": "deadline-2",
+    "id": "deadline-3",
     "label": "third deadline",
     "description": "deadlines 1 + 2 + 3: dp 1, math, bfs", 
     "select": "none",
