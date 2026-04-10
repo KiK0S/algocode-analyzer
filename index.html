@@ -288,8 +288,17 @@
     tr:nth-child(even) {
       background: rgba(0, 0, 0, 0.03);
     }
+    tr.clickable-row {
+      cursor: pointer;
+    }
+    tr.clickable-row:hover {
+      background: rgba(0, 102, 204, 0.1);
+    }
     body.dark tr:nth-child(even) {
       background: rgba(255, 255, 255, 0.05);
+    }
+    body.dark tr.clickable-row:hover {
+      background: rgba(76, 163, 255, 0.22);
     }
     td.cell-solved {
       background: #e6f5ea;
@@ -334,6 +343,90 @@
     body.dark .muted {
       color: rgba(255, 255, 255, 0.6);
     }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 10;
+    }
+    .modal.open {
+      display: flex;
+    }
+    .modal-content {
+      width: min(780px, 100%);
+      max-height: 95vh;
+      overflow: auto;
+      background: #fff;
+      color: #222;
+      border-radius: 12px;
+      padding: 1rem 1.2rem 1.2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    body.dark .modal-content {
+      background: #262626;
+      color: #f5f5f5;
+    }
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .modal-close {
+      border: none;
+      background: transparent;
+      color: inherit;
+      font-size: 1.4rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .grade-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+    }
+    .grade-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.9rem;
+    }
+    .grade-grid input {
+      padding: 0.4rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      background: #fff;
+      color: #222;
+    }
+    body.dark .grade-grid input {
+      border-color: rgba(255, 255, 255, 0.24);
+      background: #2b2b2b;
+      color: #f5f5f5;
+    }
+    .contest-breakdown {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(90px, 1fr));
+      gap: 0.5rem;
+    }
+    .grade-output {
+      border-radius: 8px;
+      background: rgba(0, 102, 204, 0.1);
+      padding: 0.7rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    body.dark .grade-output {
+      background: rgba(76, 163, 255, 0.2);
+    }
     @media (max-width: 900px) {
       table {
         font-size: 0.85rem;
@@ -351,6 +444,9 @@
       #controls .button,
       #controls button {
         width: 100%;
+      }
+      .contest-breakdown {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
       }
     }
   </style>
@@ -399,6 +495,53 @@
       </table>
     </div>
   </main>
+  <div id="grade-modal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="grade-modal-title">
+      <div class="modal-header">
+        <div>
+          <h2 id="grade-modal-title">Grade calculator</h2>
+          <div id="grade-modal-subtitle" class="muted"></div>
+        </div>
+        <button id="grade-modal-close" class="modal-close" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="grade-grid">
+        <label>
+          Algo contests solved problems (0-300)
+          <input id="algo-total-input" type="number" min="0" max="300" step="1" />
+        </label>
+        <label>
+          Algo contests grade (0-10)
+          <input id="algo-grade-input" type="number" min="0" max="10" step="0.01" />
+        </label>
+        <label>
+          Grand Prix total solved (0-50)
+          <input id="gp-total-input" type="number" min="0" max="50" step="1" />
+        </label>
+        <label>
+          Grand Prix grade (0-10)
+          <input id="gp-grade-input" type="number" min="0" max="10" step="0.01" readonly />
+        </label>
+        <label>
+          Exam grade (0-10)
+          <input id="exam-grade-input" type="number" min="0" max="10" step="0.01" />
+        </label>
+      </div>
+      <div>
+        <div class="muted">Grand Prix contest solved counts (10 problems each):</div>
+        <div class="contest-breakdown">
+          <label>GP 1<input class="gp-contest-input" type="number" min="0" max="10" step="1" /></label>
+          <label>GP 2<input class="gp-contest-input" type="number" min="0" max="10" step="1" /></label>
+          <label>GP 3<input class="gp-contest-input" type="number" min="0" max="10" step="1" /></label>
+          <label>GP 4<input class="gp-contest-input" type="number" min="0" max="10" step="1" /></label>
+          <label>GP 5<input class="gp-contest-input" type="number" min="0" max="10" step="1" /></label>
+        </div>
+      </div>
+      <div id="grade-output" class="grade-output">
+        <div>Final mark: —</div>
+        <div class="muted">0.5 × Algo + 0.2 × Grand Prix + 0.3 × Exam</div>
+      </div>
+    </div>
+  </div>
   <script>
     (function () {
       const API_URL = 'https://algocode.ru/standings_data/bp_fall_2025';
@@ -486,8 +629,123 @@
         tableBody: document.querySelector('#standings tbody'),
         selectAll: document.getElementById('select-all'),
         clearSelection: document.getElementById('clear-selection'),
-        exportButton: document.getElementById('export')
+        exportButton: document.getElementById('export'),
+        gradeModal: document.getElementById('grade-modal'),
+        gradeModalSubtitle: document.getElementById('grade-modal-subtitle'),
+        gradeModalClose: document.getElementById('grade-modal-close'),
+        algoTotalInput: document.getElementById('algo-total-input'),
+        algoGradeInput: document.getElementById('algo-grade-input'),
+        gpTotalInput: document.getElementById('gp-total-input'),
+        gpGradeInput: document.getElementById('gp-grade-input'),
+        examGradeInput: document.getElementById('exam-grade-input'),
+        gpContestInputs: Array.from(document.querySelectorAll('.gp-contest-input')),
+        gradeOutput: document.getElementById('grade-output')
       };
+
+      let selectedParticipantName = '';
+
+      function clampNumber(value, min, max) {
+        if (!Number.isFinite(value)) {
+          return min;
+        }
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function parseInputNumber(input, min, max) {
+        const parsed = Number.parseFloat(input.value);
+        if (!Number.isFinite(parsed)) {
+          return min;
+        }
+        return clampNumber(parsed, min, max);
+      }
+
+      function countSolvedAllProblems(participant) {
+        if (typeof participant.fallbackSolved === 'number' && participant.fallbackSolved >= 0) {
+          return participant.fallbackSolved;
+        }
+        return state.problems.reduce((total, problem) => (participant.problems[problem.id]?.solved ? total + 1 : total), 0);
+      }
+
+      function algoGradeFromSolved(totalSolved) {
+        return clampNumber((totalSolved / 300) * 10, 0, 10);
+      }
+
+      function algoSolvedFromGrade(grade) {
+        return clampNumber((grade / 10) * 300, 0, 300);
+      }
+
+      function gpGradeFromSolved(totalSolved) {
+        return clampNumber((totalSolved / 50) * 10, 0, 10);
+      }
+
+      function renderGradeOutput() {
+        const algoGrade = parseInputNumber(elements.algoGradeInput, 0, 10);
+        const gpGrade = parseInputNumber(elements.gpGradeInput, 0, 10);
+        const examGrade = parseInputNumber(elements.examGradeInput, 0, 10);
+        const finalMark = (0.5 * algoGrade) + (0.2 * gpGrade) + (0.3 * examGrade);
+        elements.gradeOutput.innerHTML = `
+          <div>Final mark: ${finalMark.toFixed(2)}</div>
+          <div class="muted">Algo: ${algoGrade.toFixed(2)} • GP: ${gpGrade.toFixed(2)} • Exam: ${examGrade.toFixed(2)}</div>
+          <div class="muted">0.5 × Algo + 0.2 × Grand Prix + 0.3 × Exam</div>
+        `;
+      }
+
+      function syncAlgoFromSolved() {
+        const solved = parseInputNumber(elements.algoTotalInput, 0, 300);
+        const grade = algoGradeFromSolved(solved);
+        elements.algoTotalInput.value = String(Math.round(solved));
+        elements.algoGradeInput.value = grade.toFixed(2);
+        renderGradeOutput();
+      }
+
+      function syncAlgoFromGrade() {
+        const grade = parseInputNumber(elements.algoGradeInput, 0, 10);
+        const solved = algoSolvedFromGrade(grade);
+        elements.algoGradeInput.value = grade.toFixed(2);
+        elements.algoTotalInput.value = String(Math.round(solved));
+        renderGradeOutput();
+      }
+
+      function syncGpFromTotal() {
+        const solved = parseInputNumber(elements.gpTotalInput, 0, 50);
+        const grade = gpGradeFromSolved(solved);
+        elements.gpTotalInput.value = String(Math.round(solved));
+        elements.gpGradeInput.value = grade.toFixed(2);
+        renderGradeOutput();
+      }
+
+      function syncGpFromContestInputs() {
+        const total = elements.gpContestInputs.reduce((sum, input) => {
+          const value = parseInputNumber(input, 0, 10);
+          input.value = String(Math.round(value));
+          return sum + Math.round(value);
+        }, 0);
+        elements.gpTotalInput.value = String(total);
+        elements.gpGradeInput.value = gpGradeFromSolved(total).toFixed(2);
+        renderGradeOutput();
+      }
+
+      function openGradeModal(participant) {
+        selectedParticipantName = participant.name;
+        elements.gradeModalSubtitle.textContent = `Participant: ${selectedParticipantName}`;
+        const algoSolved = clampNumber(countSolvedAllProblems(participant), 0, 300);
+        elements.algoTotalInput.value = String(Math.round(algoSolved));
+        elements.algoGradeInput.value = algoGradeFromSolved(algoSolved).toFixed(2);
+        elements.gpTotalInput.value = '0';
+        elements.gpGradeInput.value = '0.00';
+        elements.examGradeInput.value = '0';
+        elements.gpContestInputs.forEach((input) => {
+          input.value = '0';
+        });
+        renderGradeOutput();
+        elements.gradeModal.classList.add('open');
+        elements.gradeModal.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeGradeModal() {
+        elements.gradeModal.classList.remove('open');
+        elements.gradeModal.setAttribute('aria-hidden', 'true');
+      }
 
       function setStatus(message, options = {}) {
         const { isError = false, detail } = options;
@@ -1954,6 +2212,7 @@
 
         filtered.forEach((participant, index) => {
           const row = document.createElement('tr');
+          row.classList.add('clickable-row');
           const rankCell = document.createElement('td');
           rankCell.textContent = String(index + 1);
           rankCell.classList.add('shrink');
@@ -2000,6 +2259,9 @@
               }
             }
             row.append(cell);
+          });
+          row.addEventListener('click', () => {
+            openGradeModal(participant);
           });
           elements.tableBody.append(row);
         });
@@ -2099,6 +2361,25 @@
 
       elements.exportButton.addEventListener('click', () => {
         exportCsv();
+      });
+
+      elements.algoTotalInput.addEventListener('input', syncAlgoFromSolved);
+      elements.algoGradeInput.addEventListener('input', syncAlgoFromGrade);
+      elements.gpTotalInput.addEventListener('input', syncGpFromTotal);
+      elements.examGradeInput.addEventListener('input', renderGradeOutput);
+      elements.gpContestInputs.forEach((input) => {
+        input.addEventListener('input', syncGpFromContestInputs);
+      });
+      elements.gradeModalClose.addEventListener('click', closeGradeModal);
+      elements.gradeModal.addEventListener('click', (event) => {
+        if (event.target === elements.gradeModal) {
+          closeGradeModal();
+        }
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && elements.gradeModal.classList.contains('open')) {
+          closeGradeModal();
+        }
       });
 
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
