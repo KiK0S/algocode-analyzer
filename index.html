@@ -453,7 +453,7 @@
 </head>
 <body>
   <main>
-    <h1>AlgoCode Standings Analyzer</h1>
+    <h1>AlgoCode Standings Analyzer 2026</h1>
     <section id="controls">
       <label>
         Group filter
@@ -475,7 +475,7 @@
         <button id="select-all" class="secondary" type="button">Select all problems</button>
         <button id="clear-selection" class="secondary" type="button">Clear selection</button>
         <button id="export" type="button">Export CSV</button>
-        <a id="view-snapshot" class="button secondary" href="standings_data/bp_fall_2025.json" target="_blank" rel="noopener">Open snapshot</a>
+        <a id="view-snapshot" class="button secondary" href="standings_data/bp_2026.json" target="_blank" rel="noopener">Open snapshot</a>
       </div>
     </section>
     <details id="problem-filter-panel" class="problem-filter">
@@ -544,10 +544,14 @@
   </div>
   <script>
     (function () {
-      const API_URL = 'https://algocode.ru/standings_data/bp_fall_2025';
+      const API_URL = 'https://algocode.ru/standings_data/bp_2026/';
+      const MUST_HAVE_PROBLEMS = {
+        3250: new Set(['A', 'C', 'F', 'H']),
+        3261: new Set(['A', 'B', 'D', 'G', 'H', 'I', 'O'])
+      };
       const DATA_SOURCES = [
         {
-          url: 'standings_data/bp_fall_2025.json',
+          url: 'standings_data/bp_2026.json',
           label: 'Cached snapshot',
           mode: 'same-origin'
         },
@@ -1166,6 +1170,10 @@
             return;
           }
           const contestId = contest?.id ?? contest?.slug ?? contest?.code ?? contest?.ejudge_id ?? `contest-${contestIndex + 1}`;
+          const mustHaveProblems = MUST_HAVE_PROBLEMS[contestId];
+          if (!mustHaveProblems) {
+            return;
+          }
           const contestLabel = contest?.short ?? contest?.code ?? contest?.alias ?? contestId ?? `C${contestIndex + 1}`;
           const contestTitle = contest?.title ?? contest?.name ?? contestLabel ?? `Contest ${contestIndex + 1}`;
           const built = buildProblemsFromList(contestProblems, {
@@ -1175,6 +1183,9 @@
             contestOrder: contestIndex
           });
           built.forEach((problem, problemIndex) => {
+            if (!mustHaveProblems.has(problem.short)) {
+              return;
+            }
             const baseId = multiContest ? `${contestId}::${problem.id}` : problem.id;
             const problemCode = problem.problemCode ?? problem.short ?? `P${problemIndex + 1}`;
             const problemTitle = problem.problemTitle ?? problem.title ?? `Problem ${problemIndex + 1}`;

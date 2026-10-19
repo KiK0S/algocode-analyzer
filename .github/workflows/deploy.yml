@@ -43,9 +43,9 @@ jobs:
             echo "Fetched live standings snapshot"
           else
             echo "Falling back to cached snapshot"
-            if [ -f standings_data/bp_fall_2025.json ]; then
+            if [ -f standings_data/bp_2026.json ]; then
               mkdir -p public/standings_data
-              cp standings_data/bp_fall_2025.json public/standings_data/bp_fall_2025.json
+              cp standings_data/bp_2026.json public/standings_data/bp_2026.json
             else
               echo "No cached standings snapshot available" >&2
               exit 1

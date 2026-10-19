@@ -3,14 +3,14 @@
 A lightweight static dashboard that fetches the AlgoCode course standings and lets you:
 
 - Filter participants by group or by a text search.
-- Toggle individual problems to recompute the solved count using only the selected subset.
+- Toggle the must-have problems from the first two contests to recompute the solved count using only the selected subset.
 - Export the filtered standings as a CSV that respects the current problem selection.
 
 The site is published automatically to GitHub Pages via the included workflow (`.github/workflows/deploy.yml`).
 
 ## Local usage
 
-Open `index.html` in any modern browser. By default, the page looks for a same-origin snapshot at `standings_data/bp_fall_2025.json` and falls back to the live endpoint (`https://algocode.ru/standings_data/bp_fall_2025`) if the cached copy is missing.
+Open `index.html` in any modern browser. By default, the page looks for a same-origin snapshot at `standings_data/bp_2026.json` and falls back to the live endpoint (`https://algocode.ru/standings_data/bp_2026/`) if the cached copy is missing. The displayed standings include only the 2025 must-have problem letters for the first two 2026 contests: C++ (3250) and Поиски (3261).
 
 If the live endpoint blocks cross-origin requests, the UI will continue using the cached snapshot and surface an error in the status banner. When both sources fail, the app now bundles a tiny sample dataset so you can still interact with the interface while tracking down the data issue.
 
@@ -22,9 +22,9 @@ Use the helper script to refresh the local snapshot:
 ./scripts/fetch-standings.sh
 ```
 
-The script downloads the latest standings into `standings_data/bp_fall_2025.json`, which is the file that GitHub Pages will serve alongside the site. The helper refuses to overwrite the snapshot with an empty file so failed downloads don't blank the published data. You can point the script at an alternate output directory by passing a path argument, e.g. `./scripts/fetch-standings.sh public/standings_data`.
+The script downloads the latest standings into `standings_data/bp_2026.json`, which is the file that GitHub Pages will serve alongside the site. The helper refuses to overwrite the snapshot with an empty file so failed downloads don't blank the published data. You can point the script at an alternate output directory by passing a path argument, e.g. `./scripts/fetch-standings.sh public/standings_data`.
 
-> The repository includes a tiny sample dataset so the UI works offline—be sure to refresh it before relying on the numbers.
+> The repository includes a 2026 snapshot. Refresh it before relying on the latest numbers.
 
 ## Problem filter presets
 
@@ -52,12 +52,12 @@ Example preset file:
     "select": "all"
   },
   {
-    "id": "dp-focus",
-    "label": "Dynamic programming focus",
-    "description": "Keeps only the Bootcamp Fall 2025 contest and highlights a pair of late DP tasks.",
+    "id": "cpp-focus",
+    "label": "C++ focus",
+    "description": "Selects two tasks from the 2026 C++ contest.",
     "select": "none",
-    "contests": ["bp_fall_2025"],
-    "problems": ["bp_fall_2025::F", "bp_fall_2025::G"]
+    "contests": ["3250"],
+    "problems": ["3250::A", "3250::C"]
   }
 ]
 ```

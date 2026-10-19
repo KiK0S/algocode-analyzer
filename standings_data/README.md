@@ -1,3 +1,3 @@
 # Standings snapshot
 
-This directory stores the cached standings JSON (`bp_fall_2025.json`) that the site loads from the same origin to avoid cross-origin failures. The committed file is only a small sample so the UI works offline—refresh it with `./scripts/fetch-standings.sh` to pull the real data.
+This directory stores the cached 2026 standings JSON (`bp_2026.json`) that the site loads from the same origin to avoid cross-origin failures. Refresh it with `./scripts/fetch-standings.sh` to pull the latest data. The page displays only the selected must-have problems from C++ and Поиски.
